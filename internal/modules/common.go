@@ -103,6 +103,43 @@ type Consumption struct {
 	EnergyMin float64 `json:"energy_min"`
 	EnergyMax float64 `json:"energy_max"`
 	Material  float64 `json:"material"`
+
+	// Materials holds the per-material-class share of this consumption
+	// (absolute values summing to the aggregate fields above). Grouped by
+	// class (Concreto, Aço, Argamassa, Blocos) for report display.
+	Materials []data.MaterialConsumption `json:"materials,omitempty"`
+}
+
+// Material class labels used for the per-material breakdown. They follow the
+// module's own material naming (English). Display localization (e.g. "Aço" in
+// PT-BR) is applied later when rendering the report.
+const (
+	MaterialClassConcrete = "concrete"
+	MaterialClassSteel    = "steel"
+	MaterialClassMortar   = "mortar"
+	MaterialClassBlocks   = "blocks"
+	MaterialClassGrout    = "grout"
+)
+
+// Resistance keys used to split the material breakdown by strength category.
+// Concrete uses FCK, steel CA, grout FGK, mortar FAK and blocks FBK.
+const (
+	concreteResistancePrefix = "fck"
+	steelResistancePrefix    = "ca"
+	groutResistancePrefix    = "fgk"
+	mortarResistancePrefix   = "fak"
+	blocksResistancePrefix   = "fbk"
+)
+
+func concreteResistanceKey(fck int) string    { return fmt.Sprintf("%s_%d", concreteResistancePrefix, fck) }
+func groutResistanceKey(fgk int) string       { return fmt.Sprintf("%s_%d", groutResistancePrefix, fgk) }
+func mortarResistanceKey(fak float64) string  { return fmt.Sprintf("%s_%g", mortarResistancePrefix, fak) }
+func blocksResistanceKey(fbk float64) string  { return fmt.Sprintf("%s_%g", blocksResistancePrefix, fbk) }
+func steelResistanceKey(resistance string, otherResistance float64) string {
+	if resistance == "other" {
+		return fmt.Sprintf("%s_other_%g", steelResistancePrefix, otherResistance)
+	}
+	return fmt.Sprintf("%s_%s", steelResistancePrefix, resistance)
 }
 
 func (c *Consumption) sum(value Consumption) {
@@ -111,6 +148,30 @@ func (c *Consumption) sum(value Consumption) {
 	c.EnergyMin += value.EnergyMin
 	c.EnergyMax += value.EnergyMax
 	c.Material += value.Material
+}
+
+// addMaterials merges the material breakdown of another consumption into this
+// one, aggregating entries with the same material class and resistance
+// category. It only touches the breakdown; aggregate fields are summed via
+// sum().
+func (c *Consumption) addMaterials(value Consumption) {
+	for _, material := range value.Materials {
+		merged := false
+		for i := range c.Materials {
+			if c.Materials[i].Material == material.Material && c.Materials[i].Resistance == material.Resistance {
+				c.Materials[i].CO2Min += material.CO2Min
+				c.Materials[i].CO2Max += material.CO2Max
+				c.Materials[i].EnergyMin += material.EnergyMin
+				c.Materials[i].EnergyMax += material.EnergyMax
+				c.Materials[i].Quantity += material.Quantity
+				merged = true
+				break
+			}
+		}
+		if !merged {
+			c.Materials = append(c.Materials, material)
+		}
+	}
 }
 
 func concreteVolumeFromElement(ce ConcreteElement) float64 {
@@ -231,6 +292,11 @@ func isSupportedGroutFgk(value int) bool {
 func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 	var result Consumption
 
+	type steelAgg struct {
+		CO2Min, CO2Max, EnergyMin, EnergyMax, Mass float64
+	}
+	byKey := make(map[string]*steelAgg)
+
 	for _, material := range materials {
 		if material.Mass <= 0 {
 			continue
@@ -299,6 +365,30 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		result.CO2Max += steelCO2.Max * material.Mass
 		result.EnergyMin += steelEnergy.Min * material.Mass
 		result.EnergyMax += steelEnergy.Max * material.Mass
+
+		key := steelResistanceKey(material.Resistance, material.OtherResistance)
+		agg, ok := byKey[key]
+		if !ok {
+			agg = &steelAgg{}
+			byKey[key] = agg
+		}
+		agg.CO2Min += steelCO2.Min * material.Mass
+		agg.CO2Max += steelCO2.Max * material.Mass
+		agg.EnergyMin += steelEnergy.Min * material.Mass
+		agg.EnergyMax += steelEnergy.Max * material.Mass
+		agg.Mass += material.Mass
+	}
+
+	for key, agg := range byKey {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:   MaterialClassSteel,
+			Resistance: key,
+			CO2Min:     agg.CO2Min,
+			CO2Max:     agg.CO2Max,
+			EnergyMin:  agg.EnergyMin,
+			EnergyMax:  agg.EnergyMax,
+			Quantity:   agg.Mass,
+		})
 	}
 
 	return result, nil
@@ -306,6 +396,11 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 
 func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
 	var result Consumption
+
+	type concreteAgg struct {
+		CO2Min, CO2Max, EnergyMin, EnergyMax, Volume float64
+	}
+	byKey := make(map[string]*concreteAgg)
 
 	for _, item := range items {
 		fck := float64(item.Fck)
@@ -323,6 +418,30 @@ func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
 		}
 		result.EnergyMin += energyVal.Min * item.Volume
 		result.EnergyMax += energyVal.Max * item.Volume
+
+		key := concreteResistanceKey(item.Fck)
+		agg, ok := byKey[key]
+		if !ok {
+			agg = &concreteAgg{}
+			byKey[key] = agg
+		}
+		agg.CO2Min += co2Val.Min * item.Volume
+		agg.CO2Max += co2Val.Max * item.Volume
+		agg.EnergyMin += energyVal.Min * item.Volume
+		agg.EnergyMax += energyVal.Max * item.Volume
+		agg.Volume += item.Volume
+	}
+
+	for key, agg := range byKey {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:   MaterialClassConcrete,
+			Resistance: key,
+			CO2Min:     agg.CO2Min,
+			CO2Max:     agg.CO2Max,
+			EnergyMin:  agg.EnergyMin,
+			EnergyMax:  agg.EnergyMax,
+			Quantity:   agg.Volume,
+		})
 	}
 
 	return result
@@ -891,6 +1010,7 @@ func consumptionFromDataModule(d *data.Module) *Consumption {
 		EnergyMin: *d.TotalEnergyMin,
 		EnergyMax: *d.TotalEnergyMax,
 		Material:  material,
+		Materials: d.MaterialConsumption,
 	}
 }
 

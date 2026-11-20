@@ -145,6 +145,7 @@ func (b *BeamColumn) Calculate() (Consumption, error) {
 		return Consumption{}, err
 	}
 	total.sum(steelConsumption)
+	total.addMaterials(steelConsumption)
 
 	total.Material += concreteVolumeFromItems(b.Concrete)
 
@@ -231,18 +232,19 @@ func (b *BeamColumn) toDataModule(moduleID, optionID uuid.UUID, result Consumpti
 	}
 
 	return &data.Module{
-		ID:             moduleID,
-		Type:           "beam_column",
-		OptionID:       optionID,
-		Data:           moduleData,
-		Source:         source,
-		Completed:      completed,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
-		TotalMaterial:  &result.Material,
-		FloorIDs:       b.FloorIDs,
+		ID:                  moduleID,
+		Type:                "beam_column",
+		OptionID:            optionID,
+		Data:                moduleData,
+		Source:              source,
+		Completed:           completed,
+		TotalCO2Min:         &result.CO2Min,
+		TotalCO2Max:         &result.CO2Max,
+		TotalEnergyMin:      &result.EnergyMin,
+		TotalEnergyMax:      &result.EnergyMax,
+		TotalMaterial:       &result.Material,
+		MaterialConsumption: result.Materials,
+		FloorIDs:            b.FloorIDs,
 	}
 }
 

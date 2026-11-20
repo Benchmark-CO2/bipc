@@ -65,6 +65,7 @@ func (app *application) syncMissingModuleConsumptions(moduleIDs []uuid.UUID) err
 			result.EnergyMax,
 			result.Material,
 			dataModule.Completed,
+			result.Materials,
 		)
 		if err != nil {
 			return err
@@ -81,4 +82,42 @@ func (app *application) backfillMissingModuleConsumptions() error {
 	}
 
 	return app.syncMissingModuleConsumptions(moduleIDs)
+}
+
+// backfillMissingMaterialConsumptions computes the per-material breakdown for
+// modules whose jsonb column is still NULL. Unlike the mtc sync it also covers
+// structural_masonry, since only the material breakdown jsonb is written here.
+func (app *application) backfillMissingMaterialConsumptions() error {
+	moduleIDs, err := app.models.Modules.ListModuleIDsMissingMaterialConsumption()
+	if err != nil {
+		return err
+	}
+
+	for _, moduleID := range moduleIDs {
+		dataModule, err := app.models.Modules.Get(moduleID)
+		if err != nil {
+			return err
+		}
+
+		moduleAPI, err := modules.ParseModuleType(dataModule.Type)
+		if err != nil {
+			return err
+		}
+
+		module, err := moduleAPI.Get(app.models, moduleID)
+		if err != nil {
+			return err
+		}
+
+		result, err := module.Calculate()
+		if err != nil {
+			return err
+		}
+
+		if err := app.models.Modules.UpdateMaterialConsumption(moduleID, result.Materials); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

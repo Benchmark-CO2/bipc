@@ -98,6 +98,10 @@ func main() {
 
 	flag.Parse()
 
+	if cfg.smtp.sender == "" {
+		cfg.smtp.sender = os.Getenv("SMTP_SENDER")
+	}
+
 	if *displayVersion {
 		fmt.Printf("Version: %s\n", version)
 		os.Exit(0)
@@ -126,6 +130,13 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("material backfill completed")
+
+	err = app.backfillMissingMaterialConsumptions()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+	logger.Info("material consumption backfill completed")
 
 	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender, cfg.env)
 	if err != nil {

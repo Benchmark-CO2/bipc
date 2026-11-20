@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -14,28 +15,44 @@ import (
 	"github.com/lib/pq"
 )
 
+// MaterialConsumption holds the per-material share of a module's carbon and
+// energy consumption, grouped by material class (e.g. Concreto, Aço,
+// Argamassa, Blocos) and resistance category (FCK/CA/FAK/FBK/FGK). Quantity is
+// the material amount in its natural unit (m³ for concrete/mortar/grout, kg
+// for steel, units for blocks). Stored as JSONB on the module row.
+type MaterialConsumption struct {
+	Material  string  `json:"material"`
+	Resistance string `json:"resistance"`
+	CO2Min    float64 `json:"co2_min"`
+	CO2Max    float64 `json:"co2_max"`
+	EnergyMin float64 `json:"energy_min"`
+	EnergyMax float64 `json:"energy_max"`
+	Quantity  float64 `json:"quantity"`
+}
+
 type Module struct {
-	ID                uuid.UUID              `json:"id"`
-	Type              string                 `json:"type"`
-	OptionID          uuid.UUID              `json:"option_id"`
-	Data              map[string]interface{} `json:"data"`
-	Source            string                 `json:"-"`
-	TotalCO2Min       *float64               `json:"total_co2_min,omitempty"`
-	TotalCO2Max       *float64               `json:"total_co2_max,omitempty"`
-	TotalEnergyMin    *float64               `json:"total_energy_min,omitempty"`
-	TotalEnergyMax    *float64               `json:"total_energy_max,omitempty"`
-	TotalMaterial     *float64               `json:"total_material,omitempty"`
-	RelativeCO2Min    *float64               `json:"relative_co2_min,omitempty"`
-	RelativeCO2Max    *float64               `json:"relative_co2_max,omitempty"`
-	RelativeEnergyMin *float64               `json:"relative_energy_min,omitempty"`
-	RelativeEnergyMax *float64               `json:"relative_energy_max,omitempty"`
-	Outdated          bool                   `json:"outdated"`
-	Completed         bool                   `json:"completed"`
-	FloorIDs          []uuid.UUID            `json:"floor_ids"`
-	FloorIndexes      []int                  `json:"-"`
-	UnitID            *uuid.UUID             `json:"unit_id,omitempty"`
-	CreatedAt         time.Time              `json:"created_at"`
-	UpdatedAt         time.Time              `json:"updated_at"`
+	ID                  uuid.UUID              `json:"id"`
+	Type                string                 `json:"type"`
+	OptionID            uuid.UUID              `json:"option_id"`
+	Data                map[string]interface{} `json:"data"`
+	Source              string                 `json:"-"`
+	MaterialConsumption []MaterialConsumption  `json:"material_consumption,omitempty"`
+	TotalCO2Min         *float64               `json:"total_co2_min,omitempty"`
+	TotalCO2Max         *float64               `json:"total_co2_max,omitempty"`
+	TotalEnergyMin      *float64               `json:"total_energy_min,omitempty"`
+	TotalEnergyMax      *float64               `json:"total_energy_max,omitempty"`
+	TotalMaterial       *float64               `json:"total_material,omitempty"`
+	RelativeCO2Min      *float64               `json:"relative_co2_min,omitempty"`
+	RelativeCO2Max      *float64               `json:"relative_co2_max,omitempty"`
+	RelativeEnergyMin   *float64               `json:"relative_energy_min,omitempty"`
+	RelativeEnergyMax   *float64               `json:"relative_energy_max,omitempty"`
+	Outdated            bool                   `json:"outdated"`
+	Completed           bool                   `json:"completed"`
+	FloorIDs            []uuid.UUID            `json:"floor_ids"`
+	FloorIndexes        []int                  `json:"-"`
+	UnitID              *uuid.UUID             `json:"unit_id,omitempty"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
 type ModuleModel struct {
@@ -638,10 +655,16 @@ func (m ModuleModel) UpsertModuleTargetConsumptions(moduleID uuid.UUID, targets 
 
 // UpdateComputedConsumption refreshes the stored total consumption columns of
 // a module row (totals are normally written on create/update; this covers
-// backfills for legacy modules whose totals are NULL or stale).
-func (m ModuleModel) UpdateComputedConsumption(moduleID uuid.UUID, co2Min, co2Max, energyMin, energyMax, material float64, completed bool) error {
+// backfills for legacy modules whose totals are NULL or stale). The material
+// breakdown is written alongside the totals.
+func (m ModuleModel) UpdateComputedConsumption(moduleID uuid.UUID, co2Min, co2Max, energyMin, energyMax, material float64, completed bool, materials []MaterialConsumption) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	materialJSON, err := json.Marshal(materials)
+	if err != nil {
+		return err
+	}
 
 	query := `
 		UPDATE module
@@ -650,13 +673,70 @@ func (m ModuleModel) UpdateComputedConsumption(moduleID uuid.UUID, co2Min, co2Ma
 			total_energy_min = $4,
 			total_energy_max = $5,
 			total_material   = $6,
+			material_consumption = $7,
 			outdated         = FALSE,
-			completed        = $7,
+			completed        = $8,
 			updated_at       = NOW()
 		WHERE id = $1`
 
-	_, err := m.DB.ExecContext(ctx, query, moduleID, co2Min, co2Max, energyMin, energyMax, material, completed)
+	_, err = m.DB.ExecContext(ctx, query, moduleID, co2Min, co2Max, energyMin, energyMax, material, materialJSON, completed)
 	return err
+}
+
+// UpdateMaterialConsumption refreshes only the material breakdown jsonb of a
+// module row. Used to backfill the breakdown for modules whose totals are
+// already stored.
+func (m ModuleModel) UpdateMaterialConsumption(moduleID uuid.UUID, materials []MaterialConsumption) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	materialJSON, err := json.Marshal(materials)
+	if err != nil {
+		return err
+	}
+
+	query := `
+		UPDATE module
+		SET material_consumption = $2,
+			updated_at = NOW()
+		WHERE id = $1`
+
+	_, err = m.DB.ExecContext(ctx, query, moduleID, materialJSON)
+	return err
+}
+
+// ListModuleIDsMissingMaterialConsumption returns modules whose material
+// breakdown jsonb has not been computed yet.
+func (m ModuleModel) ListModuleIDsMissingMaterialConsumption() ([]uuid.UUID, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT m.id
+		FROM module m
+		WHERE m.material_consumption IS NULL
+		ORDER BY m.id`
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var moduleIDs []uuid.UUID
+	for rows.Next() {
+		var moduleID uuid.UUID
+		if err := rows.Scan(&moduleID); err != nil {
+			return nil, err
+		}
+		moduleIDs = append(moduleIDs, moduleID)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return moduleIDs, nil
 }
 
 func (m ModuleModel) ListModuleIDsMissingConsumption() ([]uuid.UUID, error) {
@@ -723,16 +803,21 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 		return nil, err
 	}
 
+	materialJSON, err := json.Marshal(module.MaterialConsumption)
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
-        INSERT INTO module (id, option_id, type, data,
+        INSERT INTO module (id, option_id, type, data, material_consumption,
 			total_co2_min, total_co2_max, total_energy_min, total_energy_max, total_material,
 			relative_co2_min, relative_co2_max, relative_energy_min, relative_energy_max,
 			outdated, completed)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING created_at, updated_at`
 
 	err = tx.QueryRowContext(context.Background(), query,
-		module.ID, module.OptionID, module.Type, jsonData,
+		module.ID, module.OptionID, module.Type, jsonData, materialJSON,
 		module.TotalCO2Min, module.TotalCO2Max, module.TotalEnergyMin, module.TotalEnergyMax, module.TotalMaterial,
 		module.RelativeCO2Min, module.RelativeCO2Max, module.RelativeEnergyMin, module.RelativeEnergyMax,
 		module.Outdated, module.Completed,
@@ -743,6 +828,162 @@ func (m ModuleModel) insertTx(tx *sql.Tx, module *Module) (*Module, error) {
 	}
 
 	return module, nil
+}
+
+// ProjectMaterialEmissions is one row of project-level embodied CO₂ and energy
+// grouped by technology (module type), material class and resistance category,
+// summed across tower units with repetition weighting. Quantity is the summed
+// material amount in its natural unit.
+type ProjectMaterialEmissions struct {
+	Technology string
+	Material   string
+	Resistance string
+	CO2Min     float64
+	CO2Max     float64
+	EnergyMin  float64
+	EnergyMax  float64
+	Quantity   float64
+}
+
+// materialEmissionsScope describes how to filter the shared material breakdown
+// query. floorFilter and unitFilter are SQL WHERE fragments applied to the
+// floor and direct-unit UNION branches respectively; both bind $1. weight toggles
+// repetition_count weighting (project scope) vs plain sums (single unit).
+type materialEmissionsScope struct {
+	floorFilter string
+	unitFilter  string
+	weight      bool
+}
+
+// projectMaterialEmissionsScope scopes the query to all tower units of a project.
+func projectMaterialEmissionsScope() materialEmissionsScope {
+	return materialEmissionsScope{
+		floorFilter: `u.project_id = $1`,
+		unitFilter:  `u.project_id = $1`,
+		weight:      true,
+	}
+}
+
+// unitMaterialEmissionsScope scopes the query to a single unit.
+func unitMaterialEmissionsScope() materialEmissionsScope {
+	return materialEmissionsScope{
+		floorFilter: `f.unit_id = $1`,
+		unitFilter:  `mtc.target_id = $1`,
+		weight:      false,
+	}
+}
+
+// materialEmissionsByTechnology runs the shared per-module material breakdown
+// query (material_consumption jsonb) for the given scope, keeping the same
+// semantics as project consumptions: only active options, floors plus direct
+// unit modules. With weight enabled the sums are multiplied by the unit's
+// repetition_count and restricted to tower units.
+func (m ModuleModel) materialEmissionsByTechnology(ctx context.Context, scope materialEmissionsScope, filter uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	weightExpr := ""
+	fromTail := `FROM unit_materials um`
+	if scope.weight {
+		weightExpr = ` * GREATEST(1, COALESCE(u.repetition_count, 1))`
+		fromTail = `FROM unit_materials um INNER JOIN units u ON um.unit_id = u.id WHERE u.type = 'tower'`
+	}
+
+	query := fmt.Sprintf(`
+		WITH unit_materials AS (
+			SELECT
+				f.unit_id,
+				m.type AS technology,
+				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
+				SUM((j.value->>'co2_min')::float8) AS co2_min,
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
+			FROM module m
+			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
+			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
+			INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
+			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
+			INNER JOIN units u ON f.unit_id = u.id
+			WHERE %s AND opt.active = TRUE
+			GROUP BY f.unit_id, m.type, j.value->>'material', j.value->>'resistance'
+
+			UNION ALL
+
+			SELECT
+				mtc.target_id AS unit_id,
+				m.type AS technology,
+				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
+				SUM((j.value->>'co2_min')::float8) AS co2_min,
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
+			FROM module m
+			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
+			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
+			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
+			INNER JOIN units u ON mtc.target_id = u.id
+			WHERE mtc.target_type = 'unit' AND %s AND opt.active = TRUE
+			GROUP BY mtc.target_id, m.type, j.value->>'material', j.value->>'resistance'
+		)
+		SELECT um.technology, um.material, um.resistance,
+		       SUM(um.co2_min%s) AS co2_min,
+		       SUM(um.co2_max%s) AS co2_max,
+		       SUM(um.energy_min%s) AS energy_min,
+		       SUM(um.energy_max%s) AS energy_max,
+		       SUM(um.quantity%s) AS quantity
+		%s
+		GROUP BY um.technology, um.material, um.resistance
+		ORDER BY um.technology, um.material, um.resistance`,
+		scope.floorFilter,
+		scope.unitFilter,
+		weightExpr, weightExpr, weightExpr, weightExpr, weightExpr,
+		fromTail,
+	)
+
+	rows, err := m.DB.QueryContext(ctx, query, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var emissions []ProjectMaterialEmissions
+	for rows.Next() {
+		var e ProjectMaterialEmissions
+		if err := rows.Scan(&e.Technology, &e.Material, &e.Resistance, &e.CO2Min, &e.CO2Max, &e.EnergyMin, &e.EnergyMax, &e.Quantity); err != nil {
+			return nil, err
+		}
+		emissions = append(emissions, e)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return emissions, nil
+}
+
+// GetProjectMaterialEmissionsByTechnology aggregates the per-module material
+// breakdown (material_consumption jsonb) at project level, mirroring the scope
+// used for project consumptions: only active options, floors plus direct unit
+// modules, tower units weighted by repetition_count.
+func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return m.materialEmissionsByTechnology(ctx, projectMaterialEmissionsScope(), projectID)
+}
+
+// GetUnitMaterialEmissionsByTechnology aggregates the per-module material
+// breakdown (material_consumption jsonb) for a single unit, mirroring the scope
+// used for project consumptions: only active options, floors plus direct unit
+// modules. No repetition weighting is applied (per-unit values).
+func (m ModuleModel) GetUnitMaterialEmissionsByTechnology(unitID uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return m.materialEmissionsByTechnology(ctx, unitMaterialEmissionsScope(), unitID)
 }
 
 func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, module *Module) error {
@@ -829,10 +1070,11 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	var module Module
 	var jsonData []byte
+	var materialJSON []byte
 
 	query := `
 		SELECT 
-			m.id, m.option_id, m.type, m.data,
+			m.id, m.option_id, m.type, m.data, m.material_consumption,
 			m.completed,
 			m.total_co2_min, m.total_co2_max, m.total_energy_min, m.total_energy_max, m.total_material,
 			m.relative_co2_min, m.relative_co2_max, m.relative_energy_min, m.relative_energy_max,
@@ -841,7 +1083,7 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 		WHERE m.id = $1`
 
 	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&module.ID, &module.OptionID, &module.Type, &jsonData,
+		&module.ID, &module.OptionID, &module.Type, &jsonData, &materialJSON,
 		&module.Completed,
 		&module.TotalCO2Min, &module.TotalCO2Max, &module.TotalEnergyMin, &module.TotalEnergyMax, &module.TotalMaterial,
 		&module.RelativeCO2Min, &module.RelativeCO2Max, &module.RelativeEnergyMin, &module.RelativeEnergyMax,
@@ -857,6 +1099,12 @@ func (m ModuleModel) Get(id uuid.UUID) (*Module, error) {
 
 	if err := json.Unmarshal(jsonData, &module.Data); err != nil {
 		return nil, err
+	}
+
+	if len(materialJSON) > 0 {
+		if err := json.Unmarshal(materialJSON, &module.MaterialConsumption); err != nil {
+			return nil, err
+		}
 	}
 
 	rows, err := m.DB.QueryContext(ctx, `
@@ -960,21 +1208,28 @@ func (m ModuleModel) updateTx(tx *sql.Tx, module *Module) error {
 		return err
 	}
 
+	materialJSON, err := json.Marshal(module.MaterialConsumption)
+	if err != nil {
+		return err
+	}
+
 	query = `
         UPDATE module
         SET data = $1,
-            total_co2_min = $2, total_co2_max = $3,
-			total_energy_min = $4, total_energy_max = $5,
-			total_material = $6,
-			relative_co2_min = $7, relative_co2_max = $8,
-			relative_energy_min = $9, relative_energy_max = $10,
+            material_consumption = $2,
+            total_co2_min = $3, total_co2_max = $4,
+			total_energy_min = $5, total_energy_max = $6,
+			total_material = $7,
+			relative_co2_min = $8, relative_co2_max = $9,
+			relative_energy_min = $10, relative_energy_max = $11,
             outdated = FALSE,
-            completed = $12,
+            completed = $13,
             updated_at = NOW()
-		WHERE id = $11`
+		WHERE id = $12`
 
 	_, err = tx.ExecContext(context.Background(), query,
 		jsonData,
+		materialJSON,
 		module.TotalCO2Min, module.TotalCO2Max,
 		module.TotalEnergyMin, module.TotalEnergyMax,
 		module.TotalMaterial,
@@ -1167,7 +1422,7 @@ func (m ModuleModel) SourceDistribution(projectID uuid.UUID) (map[string]float64
 		FROM module m
 		INNER JOIN options o ON o.id = m.option_id
 		INNER JOIN units u ON u.id = o.unit_id
-		WHERE u.project_id = $1`
+		WHERE u.project_id = $1 AND o.active = TRUE`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

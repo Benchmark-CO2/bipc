@@ -828,6 +828,33 @@
 		</table>
 		<p style="font-size: 7px; margin: 0;">*  Indica o desempenho mais provável, calculado com o dado de maior recorrência (moda) no SIDAC. Define o Indicador de CO₂ e de energia do resumo de emissões.</p>
 		<p style="font-size: 7px; margin: 0;">** Consumo Unitário de Material: indicador de desempenho que mede a quantidade de material consumida por unidade de medida da AC</p>
+
+		{{if .ReportData.UserModulesTable}}
+		<h2 style="margin: 3.75px 0 0;">Detalhamento dos materiais e tecnologias inseridos pelo usuário</h2>
+		<p style="margin: 0; color: #121F21; font-size: 8px;">Estas tecnologias não são incluídas no cálculo, mas foram descritas pelos usuários. Entre elas, encontram-se tecnologias não convencionais na construção civil ou que ainda serão integradas à plataforma.</p>
+
+		<table style="border-collapse: collapse; width: 100%;">
+			<thead style="display: table-header-group;">
+				<tr style="background: #187B8B;">
+					<th style="padding: 5px 8px; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Tecnologia/material</th>
+					<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Quantidade</th>
+					<th style="padding: 5px 0; color: #FBFEFE; font-size: 7px; font-weight: 700; text-align: left;">Unidade</th>
+				</tr>
+			</thead>
+			{{range .ReportData.UserModulesTable}}
+				<tr style="background: #E3F3F6; border-top: 1px solid #D4D4D8; border-bottom: 1px solid #D4D4D8;">
+					<td colspan="3" style="padding: 5px 8px; color: #121F21; font-size: 8px; font-weight: 700;">{{.Name}}</td>
+				</tr>
+				{{range .Materials}}
+					<tr style="border-bottom: 1px solid #D4D4D8;">
+						<td style="padding: 5px 8px; color: #121F21; font-size: 7px; font-weight: 400;">{{.Name}}</td>
+						<td style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{.QuantityLabel}}</td>
+						<td style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{.UnitLabel}}</td>
+					</tr>
+				{{end}}
+			{{end}}
+		</table>
+		{{end}}
 	</div>
 	
 
@@ -1266,6 +1293,7 @@
 			const paleta = ["#1f7a85", "#f28e4b", "#a46fdc", "#e5c339", "#d9534f", "#5cb85c", "#8c6d62", "#3f8fd2"];
 			const fmtPct = d3.format(".2f");
 			const pt = v => fmtPct(v).replace(".", ",") + "%";
+			const kg = v => fmtPct(v).replace(".", ",") + "Kg";
 			const largura = 360, altura = 12;
 			const raiz = d3.select(seletor).classed("gm-grafico", true).html("");
 		
@@ -1294,7 +1322,7 @@
 				.attr("width", p => x(p.pct))
 				.attr("height", altura)
 				.attr("fill", p => cor(p.material))
-				.append("title").text(p => `${p.material}: ${pt(p.pct)} / ${p.kg}Kg`);
+				.append("title").text(p => `${p.material}: ${pt(p.pct)} / ${kg(p.kg)}`);
 			
 				// rótulo só quando a fatia tem espaço
 				g.filter(p => x(p.pct) > 20).append("text")
@@ -1306,7 +1334,7 @@
 			
 				grupo.append("div").attr("class", "gm-legenda")
 				.selectAll(".gm-item").data(partes).join("span").attr("class", "gm-item")
-				.html(p => `<i class="gm-cor" style="background:${cor(p.material)}"></i>${p.material} (${pt(p.pct)} / ${p.kg}Kg)`);
+				.html(p => `<i class="gm-cor" style="background:${cor(p.material)}"></i>${p.material} (${pt(p.pct)} / ${kg(p.kg)})`);
 			});
 		}
 		renderChartGM(data.gm);
@@ -1325,7 +1353,7 @@
 			const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
 			const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
 			const bandaW = 16, gap = 4, plotW = iw - bandaW - gap, bx = iw - bandaW;
-			const x = d3.scaleLinear().domain([0, 1]).range([0, plotW]);
+			const x = d3.scaleLinear().domain([0, 0.6]).range([0, plotW]);
 			const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
 			
 			const svg = d3.select(seletor).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img")
@@ -1344,7 +1372,7 @@
 				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
 			
 			g.append("text").attr("class", "gc-axis-label gc-x").attr("x", plotW / 2).attr("y", ih + 44)
-				.attr("text-anchor", "middle").text("Concreto (m²/m²)");
+				.attr("text-anchor", "middle").text("CUM (m³/m²)");
 			g.append("text").attr("class", "gc-axis-label").attr("transform", "rotate(-90)").attr("x", -ih / 2).attr("y", -42)
 				.attr("text-anchor", "middle").text("Fração de projetos melhores");
 			
@@ -1447,6 +1475,7 @@
 				.attr("height", y.bandwidth());
 			
 			// Valores dentro das barras (não desenha onde o valor é 0)
+			const sbcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3] }).format(".2f");
 			groups.selectAll("text")
 				.data(d => d.filter(v => v[1] - v[0] > 0))
 				.join("text")
@@ -1454,7 +1483,7 @@
 				.attr("x", d => x(d[0]) + 4)
 				.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
 				.attr("dominant-baseline", "middle")
-				.text(d => `${d[1] - d[0]}%`)
+				.text(d => sbcFmt(d[1] - d[0]))
 				.each(function (d) {
 					const larguraBarra = x(d[1]) - x(d[0]) - gap;
 					const larguraTexto = this.getComputedTextLength();

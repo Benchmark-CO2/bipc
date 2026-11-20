@@ -132,6 +132,7 @@ func (w *ConcreteWall) Calculate() (Consumption, error) {
 		return Consumption{}, err
 	}
 	total.sum(steelConsumption)
+	total.addMaterials(steelConsumption)
 
 	total.Material += concreteVolumeFromItems(w.Concrete)
 
@@ -217,18 +218,19 @@ func (w *ConcreteWall) toDataModule(moduleID, optionID uuid.UUID, result Consump
 	}
 
 	return &data.Module{
-		ID:             moduleID,
-		Type:           "concrete_wall",
-		OptionID:       optionID,
-		Data:           moduleData,
-		Source:         source,
-		Completed:      completed,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
-		TotalMaterial:  &result.Material,
-		FloorIDs:       w.FloorIDs,
+		ID:                  moduleID,
+		Type:                "concrete_wall",
+		OptionID:            optionID,
+		Data:                moduleData,
+		Source:              source,
+		Completed:           completed,
+		TotalCO2Min:         &result.CO2Min,
+		TotalCO2Max:         &result.CO2Max,
+		TotalEnergyMin:      &result.EnergyMin,
+		TotalEnergyMax:      &result.EnergyMax,
+		TotalMaterial:       &result.Material,
+		MaterialConsumption: result.Materials,
+		FloorIDs:            w.FloorIDs,
 	}
 }
 

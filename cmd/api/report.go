@@ -7,9 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Benchmark-CO2/bipc/assets"
@@ -92,6 +95,22 @@ type TableRow struct {
 	Cum        float64
 }
 
+// UserModuleMaterial is a material row of an unknown module in the report: the
+// name plus ready-to-render quantity and unit labels.
+type UserModuleMaterial struct {
+	Name          string
+	Quantity      float64
+	Unit          string
+	QuantityLabel string
+	UnitLabel     string
+}
+
+// UserModuleGroup is an unknown module (technology) grouping its materials.
+type UserModuleGroup struct {
+	Name      string
+	Materials []UserModuleMaterial
+}
+
 type FloorDetail struct {
 	Name              string
 	TableCarbonEnergy []TableRow
@@ -124,6 +143,7 @@ type ReportData struct {
 	CumTotal int
 
 	TableCarbonEnergy []TableRow
+	UserModulesTable  []UserModuleGroup
 
 	UnitsDetails []unitDetail
 }
@@ -230,6 +250,525 @@ func addSelectedBenchmarkPoint(points []BenchmarkValue, id uuid.UUID, value floa
 	return append(points, BenchmarkValue{ID: id, Value: value})
 }
 
+// buildGCPoints maps a ranked Material benchmark series into the "Impacto de
+// CUM por tecnologia" scatter plot: x = CUM value (m³/m²), y = fraction of
+// better projects, with the selected project highlighted.
+func buildGCPoints(points []BenchmarkValue, selectedID uuid.UUID) []GCPonto {
+	gc := make([]GCPonto, 0, len(points))
+	for _, p := range points {
+		gc = append(gc, GCPonto{
+			X:        p.Value,
+			Y:        p.Y,
+			Destaque: p.ID == selectedID,
+		})
+	}
+	return gc
+}
+
+// buildSBCLinhas builds the "Consumo total de energia por tecnologia" (energy)
+// and "Total de Emissões por tecnologia" (co2) stacked-bar charts. Each line is
+// a project unit; each series is a technology with its average consumption
+// ((min+max)/2), matching the same values already computed for the project GET
+// and the benchmark report.
+func buildSBCLinhas(units []data.ProjectUnit, metric string) []SBCLinha {
+	linhas := make([]SBCLinha, 0, len(units))
+	for _, unit := range units {
+		serie := make([]SBCSerie, 0, len(unit.Consumptions))
+		for tech, cons := range unit.Consumptions {
+			if tech == "total" {
+				continue
+			}
+			var valor float64
+			switch metric {
+			case "energy":
+				if cons.EnergyMin != nil && cons.EnergyMax != nil {
+					valor = (*cons.EnergyMin + *cons.EnergyMax) / 2
+				} else if cons.EnergyMax != nil {
+					valor = *cons.EnergyMax
+				}
+			case "co2":
+				if cons.CO2Min != nil && cons.CO2Max != nil {
+					valor = (*cons.CO2Min + *cons.CO2Max) / 2
+				} else if cons.CO2Max != nil {
+					valor = *cons.CO2Max
+				}
+			}
+			if valor <= 0 {
+				continue
+			}
+			serie = append(serie, SBCSerie{Nome: technologyDisplayName(tech), Valor: math.Round(valor*100) / 100})
+		}
+		if len(serie) == 0 {
+			continue
+		}
+		sort.Slice(serie, func(i, j int) bool {
+			return serie[i].Valor > serie[j].Valor
+		})
+		linhas = append(linhas, SBCLinha{Nome: unit.Name, Series: serie})
+	}
+	return linhas
+}
+
+// buildUnits builds the "Composição e impacto de cada tecnologia por material"
+// chart data: one entry per tower unit, each with one Tecnology per module type
+// and one Material per material class. Values are average CO₂ ((min+max)/2)
+// normalized per m² of the unit's floor area, matching the Kg CO₂/m² unit shown
+// in the report; percentages reflect the share within each level.
+func buildUnits(units []data.ProjectUnit, emissionsFor func(uuid.UUID) ([]data.ProjectMaterialEmissions, error)) ([]Unit, error) {
+	result := make([]Unit, 0, len(units))
+	for _, unit := range units {
+		emissions, err := emissionsFor(unit.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(emissions) == 0 {
+			continue
+		}
+
+		techs := aggregateMaterialEmissions(emissions)
+
+		area := unit.Area
+		if area <= 0 {
+			area = 1
+		}
+		var unitTotal float64
+		for _, agg := range techs {
+			unitTotal += agg.total
+		}
+
+		tecnologies := make([]Tecnology, 0, len(techs))
+		for _, agg := range techs {
+			materials := make([]Material, 0, len(agg.byMat))
+			for mat, kg := range agg.byMat {
+				if kg <= 0 {
+					continue
+				}
+				materials = append(materials, Material{
+					Name:    mat,
+					Value:   kg / area,
+					Percent: kg / agg.total * 100,
+				})
+			}
+			sort.Slice(materials, func(i, j int) bool {
+				return materials[i].Value > materials[j].Value
+			})
+			percent := 0.0
+			if unitTotal > 0 {
+				percent = agg.total / unitTotal * 100
+			}
+			tecnologies = append(tecnologies, Tecnology{Name: agg.name, Percent: percent, Materials: materials})
+		}
+		sort.Slice(tecnologies, func(i, j int) bool {
+			return tecnologies[i].Percent > tecnologies[j].Percent
+		})
+
+		result = append(result, Unit{Name: unit.Name, Tecnologies: tecnologies})
+	}
+	return result, nil
+}
+
+func unknownUnitLabel(unit string) string {
+	switch unit {
+	case "m2":
+		return "m²"
+	case "m3":
+		return "m³"
+	case "other":
+		return "Outro"
+	default:
+		return unit
+	}
+}
+
+func unknownQuantityLabel(q float64) string {
+	if q == 0 {
+		return "-"
+	}
+	return strconv.FormatFloat(q, 'f', -1, 64)
+}
+
+// buildUserModulesTable groups the unknown module occurrences of the project by
+// technology, deduplicating by module type (same as the project screen) and
+// merging repeated materials by name.
+func buildUserModulesTable(occurrences []*data.UnknownModuleOccurrence) []UserModuleGroup {
+	groups := make([]UserModuleGroup, 0)
+	groupIdx := make(map[uuid.UUID]int)
+
+	for _, occurrence := range occurrences {
+		if occurrence == nil || occurrence.UnknownModule == nil {
+			continue
+		}
+
+		gi, ok := groupIdx[occurrence.UnknownModuleID]
+		if !ok {
+			gi = len(groups)
+			groupIdx[occurrence.UnknownModuleID] = gi
+			groups = append(groups, UserModuleGroup{Name: occurrence.UnknownModule.Name})
+		}
+		group := &groups[gi]
+
+		for _, material := range occurrence.Materials {
+			found := false
+			for i := range group.Materials {
+				if group.Materials[i].Name == material.Name {
+					group.Materials[i].Quantity += material.Quantity
+					found = true
+					break
+				}
+			}
+			if !found {
+				group.Materials = append(group.Materials, UserModuleMaterial{
+					Name:     material.Name,
+					Quantity: material.Quantity,
+					Unit:     material.Unit,
+				})
+			}
+		}
+	}
+
+	for gi := range groups {
+		for mi := range groups[gi].Materials {
+			groups[gi].Materials[mi].QuantityLabel = unknownQuantityLabel(groups[gi].Materials[mi].Quantity)
+			groups[gi].Materials[mi].UnitLabel = unknownUnitLabel(groups[gi].Materials[mi].Unit)
+		}
+	}
+
+	return groups
+}
+
+// buildSourceData converts the per-source percentage distribution returned by
+// SourceDistribution into chart-ready segments and the total traceability
+// percentage (the sum of all source shares). Sources with no explicit tag are
+// already attributed to "manual" by the data layer. Segments are ordered by
+// share descending so the largest source renders first on the bar.
+func buildSourceData(distribution map[string]float64) ([]SourceData, float32) {
+	labels := map[string]string{
+		"manual": "Inseridos manualmente",
+		"ifc":    "Arquivos IFC (via upload)",
+		"tqs":    "Softwares (TQS via plugin)",
+		"plugin": "Softwares (TQS via plugin)",
+		"altoqi": "Softwares (AltoQi)",
+		"csv":    "Arquivos CSV",
+	}
+	colors := map[string]string{
+		"manual": "#d4736b",
+		"ifc":    "#1b7a72",
+		"tqs":    "#8ab4e8",
+		"plugin": "#8ab4e8",
+		"altoqi": "#e8a24a",
+		"csv":    "#e8a24a",
+	}
+	fallbackColors := []string{"#5B9BD5", "#E0756C", "#64C85A", "#F8A12B", "#9ECF31", "#EAE61F"}
+
+	rawTotal := 0.0
+	sources := make([]SourceData, 0, len(distribution))
+	for source, percent := range distribution {
+		rawTotal += percent
+		label := source
+		if l, ok := labels[source]; ok {
+			label = l
+		}
+		color := fallbackColors[len(sources)%len(fallbackColors)]
+		if c, ok := colors[source]; ok {
+			color = c
+		}
+		sources = append(sources, SourceData{
+			Label: label,
+			Value: int(percent + 0.5),
+			Color: color,
+		})
+	}
+
+	sort.Slice(sources, func(i, j int) bool {
+		if sources[i].Value != sources[j].Value {
+			return sources[i].Value > sources[j].Value
+		}
+		return sources[i].Label < sources[j].Label
+	})
+
+	return sources, float32(math.Round(rawTotal))
+}
+
+// moduleTypeDisplayNames maps module types to their report display names
+// (PT-BR). Storage keys stay English; only the display is localized.
+var moduleTypeDisplayNames = map[string]string{
+	"concrete_wall":         "Parede de Concreto",
+	"structural_masonry":    "Alvenaria Estrutural",
+	"beam_column":           "Viga Pilar",
+	"raft_foundation":       "Radier",
+	"piles_foundation":      "Estaca",
+	"raft_piles_foundation": "Radier Estaqueado",
+}
+
+// materialDisplayNames maps the stored material class keys to their report
+// display names (PT-BR).
+var materialDisplayNames = map[string]string{
+	"concrete": "Concreto",
+	"steel":    "Aço",
+	"mortar":   "Argamassa",
+	"blocks":   "Blocos",
+	"grout":    "Graute",
+}
+
+// technologyDisplayName returns the report display name for a module type,
+// falling back to the raw storage key when unknown.
+func technologyDisplayName(key string) string {
+	if name, ok := moduleTypeDisplayNames[key]; ok && name != "" {
+		return name
+	}
+	return key
+}
+
+// materialDisplayName returns the report display name for a material class,
+// falling back to the raw storage key when unknown.
+func materialDisplayName(key string) string {
+	if name, ok := materialDisplayNames[key]; ok && name != "" {
+		return name
+	}
+	return key
+}
+
+// resistanceDisplayNames maps the stored resistance category keys to their
+// report display suffixes (PT-BR). Keys follow the storage format, e.g.
+// "fck_25", "ca_CA50", "fak_14", "fbk_26", "fgk_30". Display matches the
+// report layout: "FCK25", "CA50", "FAK14", "FBK26", "FGK30".
+func resistanceDisplayName(key string) string {
+	prefix, value, found := strings.Cut(key, "_")
+	if !found {
+		return key
+	}
+	switch prefix {
+	case "fck":
+		return "FCK" + value
+	case "fgk":
+		return "FGK" + value
+	case "fak":
+		return "FAK" + value
+	case "fbk":
+		return "FBK" + value
+	case "ca":
+		if strings.HasPrefix(value, "other_") {
+			return "CA" + strings.TrimPrefix(value, "other_")
+		}
+		return value
+	default:
+		return key
+	}
+}
+
+// materialTechAggregation aggregates embodied CO₂ rows by technology and
+// material class, using the mean of the min/max bounds. It is shared by the
+// charts that present a per-technology/per-material breakdown.
+type materialTechAggregation struct {
+	name  string
+	byMat map[string]float64
+	total float64
+}
+
+// aggregateMaterialEmissions groups emissions rows by technology (display name)
+// and material class (display name), skipping rows without CO₂ data. The value
+// stored is the average of the min/max bounds.
+func aggregateMaterialEmissions(emissions []data.ProjectMaterialEmissions) map[string]*materialTechAggregation {
+	techs := make(map[string]*materialTechAggregation)
+	for _, e := range emissions {
+		if e.CO2Min <= 0 && e.CO2Max <= 0 {
+			continue
+		}
+		techName := technologyDisplayName(e.Technology)
+		matName := materialDisplayName(e.Material)
+		co2Avg := (e.CO2Min + e.CO2Max) / 2
+
+		agg, ok := techs[techName]
+		if !ok {
+			agg = &materialTechAggregation{name: techName, byMat: make(map[string]float64)}
+			techs[techName] = agg
+		}
+		agg.byMat[matName] += co2Avg
+		agg.total += co2Avg
+	}
+	return techs
+}
+
+// buildGMCategorias groups the project-level emissions by technology and
+// material into the stacked-bar data of the "Total de Emissões por tecnologia
+// e material" chart. Kg uses the mean of the min/max bounds. Resistance
+// categories are aggregated into their material class. Categories and their
+// materials are ordered by Kg descending.
+func buildGMCategorias(emissions []data.ProjectMaterialEmissions) []GMCategoria {
+	categories := aggregateMaterialEmissions(emissions)
+
+	gm := make([]GMCategoria, 0, len(categories))
+	for _, agg := range categories {
+		itens := make([]GMItem, 0, len(agg.byMat))
+		for material, kg := range agg.byMat {
+			if kg <= 0 {
+				continue
+			}
+			itens = append(itens, GMItem{Material: material, Kg: kg})
+		}
+		sort.Slice(itens, func(i, j int) bool {
+			return itens[i].Kg > itens[j].Kg
+		})
+		gm = append(gm, GMCategoria{Nome: agg.name, Itens: itens})
+	}
+
+	sort.Slice(gm, func(i, j int) bool {
+		totalI := 0.0
+		for _, item := range gm[i].Itens {
+			totalI += item.Kg
+		}
+		totalJ := 0.0
+		for _, item := range gm[j].Itens {
+			totalJ += item.Kg
+		}
+		return totalI > totalJ
+	})
+
+	return gm
+}
+
+// buildTableCarbonEnergy renders the "Detalhamento do Carbono Embutido e da
+// Energia por Tecnologia Construtiva e Material" table. The first group
+// consolidates all technologies ("Geral"), followed by one group per technology
+// (module type). Each group opens with a header row holding its totals, then
+// one row per material class and resistance category. Values are normalized per
+// m² of total tower area; the "prov" (most likely) column uses the mean of the
+// min/max bounds; CUM is the material quantity per m².
+func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea float64) []TableRow {
+	type materialRow struct {
+		row TableRow
+	}
+	type techAgg struct {
+		display   string
+		materials []materialRow
+		total     TableRow
+	}
+
+	techs := make(map[string]*techAgg)
+	var geral TableRow
+	geralByKey := make(map[string]*materialRow)
+
+	makeMaterialRow := func(e data.ProjectMaterialEmissions) TableRow {
+		row := TableRow{
+			Type:       "material",
+			Name:       materialDisplayName(e.Material) + " " + resistanceDisplayName(e.Resistance),
+			Co2Min:     e.CO2Min,
+			Co2Max:     e.CO2Max,
+			EnergyMin:  e.EnergyMin,
+			EnergyMax:  e.EnergyMax,
+			Cum:        e.Quantity,
+		}
+		row.Co2Prov = (row.Co2Min + row.Co2Max) / 2
+		row.EnergyProv = (row.EnergyMin + row.EnergyMax) / 2
+		return row
+	}
+
+	addRow := func(target *TableRow, row TableRow) {
+		target.Co2Min += row.Co2Min
+		target.Co2Max += row.Co2Max
+		target.Co2Prov = (target.Co2Min + target.Co2Max) / 2
+		target.EnergyMin += row.EnergyMin
+		target.EnergyMax += row.EnergyMax
+		target.EnergyProv = (target.EnergyMin + target.EnergyMax) / 2
+		target.Cum += row.Cum
+	}
+
+	addMaterial := func(target *techAgg, e data.ProjectMaterialEmissions) {
+		row := makeMaterialRow(e)
+		target.materials = append(target.materials, materialRow{row: row})
+		addRow(&target.total, row)
+	}
+
+	for _, e := range emissions {
+		if e.CO2Min <= 0 && e.CO2Max <= 0 && e.EnergyMin <= 0 && e.EnergyMax <= 0 {
+			continue
+		}
+
+		techName := technologyDisplayName(e.Technology)
+		agg, ok := techs[techName]
+		if !ok {
+			agg = &techAgg{display: techName}
+			techs[techName] = agg
+		}
+		addMaterial(agg, e)
+
+		geral.Co2Min += e.CO2Min
+		geral.Co2Max += e.CO2Max
+		geral.EnergyMin += e.EnergyMin
+		geral.EnergyMax += e.EnergyMax
+		geral.Cum += e.Quantity
+
+		matKey := e.Material + "\x00" + e.Resistance
+		mr, ok := geralByKey[matKey]
+		if !ok {
+			row := makeMaterialRow(e)
+			mr = &materialRow{row: row}
+			geralByKey[matKey] = mr
+		} else {
+			addRow(&mr.row, makeMaterialRow(e))
+		}
+	}
+
+	techList := make([]*techAgg, 0, len(techs))
+	for _, agg := range techs {
+		sort.Slice(agg.materials, func(i, j int) bool {
+			return agg.materials[i].row.Co2Max > agg.materials[j].row.Co2Max
+		})
+		agg.total.Co2Prov = (agg.total.Co2Min + agg.total.Co2Max) / 2
+		agg.total.EnergyProv = (agg.total.EnergyMin + agg.total.EnergyMax) / 2
+		techList = append(techList, agg)
+	}
+
+	sort.Slice(techList, func(i, j int) bool {
+		return techList[i].total.Co2Max > techList[j].total.Co2Max
+	})
+
+	rows := make([]TableRow, 0, len(techList)*2+2)
+	geralHeader := geral
+	geralHeader.Type = "tecnologia"
+	geralHeader.Name = "Geral"
+	geralHeader.Co2Prov = (geralHeader.Co2Min + geralHeader.Co2Max) / 2
+	geralHeader.EnergyProv = (geralHeader.EnergyMin + geralHeader.EnergyMax) / 2
+	rows = append(rows, geralHeader)
+
+	geralMaterials := make([]materialRow, 0, len(geralByKey))
+	for _, mr := range geralByKey {
+		geralMaterials = append(geralMaterials, *mr)
+	}
+	sort.Slice(geralMaterials, func(i, j int) bool {
+		return geralMaterials[i].row.Co2Max > geralMaterials[j].row.Co2Max
+	})
+	for _, m := range geralMaterials {
+		rows = append(rows, m.row)
+	}
+
+	for _, agg := range techList {
+		header := agg.total
+		header.Type = "tecnologia"
+		header.Name = agg.display
+		rows = append(rows, header)
+		for _, m := range agg.materials {
+			rows = append(rows, m.row)
+		}
+	}
+
+	area := totalArea
+	if area <= 0 {
+		area = 1
+	}
+	for i := range rows {
+		rows[i].Co2Min /= area
+		rows[i].Co2Prov /= area
+		rows[i].Co2Max /= area
+		rows[i].EnergyMin /= area
+		rows[i].EnergyProv /= area
+		rows[i].EnergyMax /= area
+		rows[i].Cum /= area
+	}
+
+	return rows
+}
+
 func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request) {
 	projectID, err := app.readUUIDParam(r, "projectID")
 	if err != nil {
@@ -267,7 +806,14 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		totalUCArea += unit.Area * float64(rep)
 	}
 
-	report, err := app.buildProjectBenchmarkReport(projectID)
+	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	benchmarkSeries := separateProjectConsumption(benchmarkProjects)
+
+	report, err := app.buildProjectBenchmarkReportWithSeries(projectID, benchmarkSeries)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -278,6 +824,58 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	energyClass := classificationLetter(report.Rank.Energy.Y)
 	energyTotal := report.Rank.Energy.Total
 
+	sourceDistribution, err := app.models.Modules.SourceDistribution(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	sources, sourcesTotal := buildSourceData(sourceDistribution)
+
+	projectMaterialEmissions, err := app.models.Modules.GetProjectMaterialEmissionsByTechnology(projectID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	gm := buildGMCategorias(projectMaterialEmissions)
+
+	type benchmarkPair struct {
+		points *[]BenchmarkValue
+		value  float64
+	}
+
+	benchmarkPairs := []benchmarkPair{
+		{&benchmarkSeries.CO2Min, report.Project.CO2.Min.Value},
+		{&benchmarkSeries.CO2Max, report.Project.CO2.Max.Value},
+		{&benchmarkSeries.EnergyMin, report.Project.Energy.Min.Value},
+		{&benchmarkSeries.EnergyMax, report.Project.Energy.Max.Value},
+	}
+	for _, pair := range benchmarkPairs {
+		*pair.points = addSelectedBenchmarkPoint(*pair.points, projectID, pair.value)
+		calculateGiniRank(*pair.points)
+	}
+	co2Points := normalizeScreenshotBenchmarkPoints(benchmarkSeries.CO2Min, benchmarkSeries.CO2Max)
+	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
+
+	var projectCUM float64
+	if totalConsumption, ok := project.Consumptions["total"]; ok && totalConsumption != nil && totalConsumption.Material != nil {
+		projectCUM = *totalConsumption.Material
+	}
+	benchmarkSeries.Material = addSelectedBenchmarkPoint(
+		benchmarkSeries.Material,
+		projectID,
+		projectCUM,
+	)
+	calculateGiniRank(benchmarkSeries.Material)
+	gcPoints := buildGCPoints(benchmarkSeries.Material, projectID)
+
+	projectCUMY := 0.0
+	for _, point := range benchmarkSeries.Material {
+		if point.ID == projectID {
+			projectCUMY = point.Y
+			break
+		}
+	}
+
 	var reportData = ReportData{
 		ProjectWithUnits: project,
 
@@ -285,7 +883,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		TotalUC:     totalUC,
 		TotalUCArea: totalUCArea,
 
-		SourcesTotal: 71,
+		SourcesTotal: sourcesTotal,
 
 		Report:                  report,
 		BaseLineCO2reference:    *report.Baseline.CO2.Reference,
@@ -297,182 +895,31 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		EnergyClass:             energyClass,
 		EnergyTotal:             energyTotal,
 
-		CumClass: "D",
-		CumTotal: 301,
+		CumClass: classificationLetter(projectCUMY),
+		CumTotal: len(benchmarkSeries.Material),
 
-		TableCarbonEnergy: []TableRow{
-			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
-			{Type: "material", Name: "Material B", Co2Min: 8.0, Co2Prov: 12.0, Co2Max: 16.0, EnergyMin: 4.0, EnergyProv: 6.0, EnergyMax: 8.0, Cum: 24.0},
-			{Type: "material", Name: "Tecnologia C", Co2Min: 12.0, Co2Prov: 18.0, Co2Max: 24.0, EnergyMin: 6.0, EnergyProv: 9.0, EnergyMax: 12.0, Cum: 36.0},
-			{Type: "material", Name: "Material D", Co2Min: 10.0, Co2Prov: 15.0, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
-			{Type: "material", Name: "Tecnologia E", Co2Min: 14.0, Co2Prov: 20.0, Co2Max: 26.0, EnergyMin: 7.0, EnergyProv: 10.0, EnergyMax: 14.0, Cum: 42.0},
-			{Type: "material", Name: "Material F", Co2Min: 11.0, Co2Prov: 16.0, Co2Max: 22.0, EnergyMin: 5.5, EnergyProv: 8.0, EnergyMax: 11.0, Cum: 33.0},
-			{Type: "tecnologia", Name: "Tecnologia A", Co2Min: 10.5, Co2Prov: 15.2, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
-			{Type: "material", Name: "Material B", Co2Min: 8.0, Co2Prov: 12.0, Co2Max: 16.0, EnergyMin: 4.0, EnergyProv: 6.0, EnergyMax: 8.0, Cum: 24.0},
-			{Type: "material", Name: "Tecnologia C", Co2Min: 12.0, Co2Prov: 18.0, Co2Max: 24.0, EnergyMin: 6.0, EnergyProv: 9.0, EnergyMax: 12.0, Cum: 36.0},
-			{Type: "material", Name: "Material D", Co2Min: 10.0, Co2Prov: 15.0, Co2Max: 20.0, EnergyMin: 5.0, EnergyProv: 7.5, EnergyMax: 10.0, Cum: 30.0},
-			{Type: "material", Name: "Tecnologia E", Co2Min: 14.0, Co2Prov: 20.0, Co2Max: 26.0, EnergyMin: 7.0, EnergyProv: 10.0, EnergyMax: 14.0, Cum: 42.0},
-			{Type: "material", Name: "Material F", Co2Min: 11.0, Co2Prov: 16.0, Co2Max: 22.0, EnergyMin: 5.5, EnergyProv: 8.0, EnergyMax: 11.0, Cum: 33.0},
-		},
+		UserModulesTable: buildUserModulesTable(project.UnknownModules),
 
-		UnitsDetails: []unitDetail{
-			{
-				Name: "Torre A",
-				FloorsDetails: []FloorDetail{
-					{
-						Name: "Pavimento tipo",
-						TableCarbonEnergy: []TableRow{
-							{Type: "tecnologia", Name: "Alvenaria estrutural", Co2Min: 48.20, Co2Prov: 52.40, Co2Max: 57.10, EnergyMin: 620.50, EnergyProv: 665.80, EnergyMax: 710.20, Cum: 0.34},
-							{Type: "material", Name: "Concreto armado", Co2Min: 72.10, Co2Prov: 78.60, Co2Max: 85.40, EnergyMin: 780.30, EnergyProv: 830.40, EnergyMax: 890.70, Cum: 0.48},
-							{Type: "material", Name: "Aco estrutural", Co2Min: 94.30, Co2Prov: 102.20, Co2Max: 111.80, EnergyMin: 920.10, EnergyProv: 980.50, EnergyMax: 1045.00, Cum: 0.62},
-						},
-					},
-					{
-						Name: "Cobertura",
-						TableCarbonEnergy: []TableRow{
-							{Type: "tecnologia", Name: "Sistema de cobertura", Co2Min: 35.40, Co2Prov: 39.80, Co2Max: 44.10, EnergyMin: 410.20, EnergyProv: 455.60, EnergyMax: 502.30, Cum: 0.28},
-							{Type: "material", Name: "Impermeabilizacao", Co2Min: 18.70, Co2Prov: 21.30, Co2Max: 24.50, EnergyMin: 205.40, EnergyProv: 228.90, EnergyMax: 251.80, Cum: 0.16},
-						},
-					},
-				},
-			},
-			{
-				Name: "Torre B",
-				FloorsDetails: []FloorDetail{
-					{
-						Name: "Pavimento tipo",
-						TableCarbonEnergy: []TableRow{
-							{Type: "tecnologia", Name: "Estrutura em concreto", Co2Min: 68.50, Co2Prov: 74.20, Co2Max: 81.30, EnergyMin: 735.00, EnergyProv: 790.40, EnergyMax: 848.60, Cum: 0.45},
-							{Type: "material", Name: "Vedacao em alvenaria", Co2Min: 42.30, Co2Prov: 46.70, Co2Max: 51.20, EnergyMin: 580.20, EnergyProv: 625.80, EnergyMax: 680.10, Cum: 0.31},
-						},
-					},
-				},
-			},
-		},
+		TableCarbonEnergy: buildTableCarbonEnergy(projectMaterialEmissions, totalUCArea),
+		UnitsDetails:      []unitDetail{},
 	}
 
-	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
+	unitsData, err := buildUnits(project.Units, app.models.Modules.GetUnitMaterialEmissionsByTechnology)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	benchmarkSeries := separateProjectConsumption(benchmarkProjects)
-	benchmarkSeries.CO2Min = addSelectedBenchmarkPoint(
-		benchmarkSeries.CO2Min,
-		projectID,
-		report.Project.CO2.Min.Value,
-	)
-	benchmarkSeries.CO2Max = addSelectedBenchmarkPoint(
-		benchmarkSeries.CO2Max,
-		projectID,
-		report.Project.CO2.Max.Value,
-	)
-	benchmarkSeries.EnergyMin = addSelectedBenchmarkPoint(
-		benchmarkSeries.EnergyMin,
-		projectID,
-		report.Project.Energy.Min.Value,
-	)
-	benchmarkSeries.EnergyMax = addSelectedBenchmarkPoint(
-		benchmarkSeries.EnergyMax,
-		projectID,
-		report.Project.Energy.Max.Value,
-	)
-	calculateGiniRank(benchmarkSeries.CO2Min)
-	calculateGiniRank(benchmarkSeries.CO2Max)
-	calculateGiniRank(benchmarkSeries.EnergyMin)
-	calculateGiniRank(benchmarkSeries.EnergyMax)
-	co2Points := normalizeScreenshotBenchmarkPoints(benchmarkSeries.CO2Min, benchmarkSeries.CO2Max)
-	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
-
 	var jsonData = JSONData{
-		Sources: []SourceData{
-			{Label: "Softwares (TQS via plugin)", Value: 8, Color: "#8ab4e8"},
-			{Label: "Arquivos IFC (via upload)", Value: 46, Color: "#1b7a72"},
-			{Label: "Arquivos CSV", Value: 12, Color: "#e8a24a"},
-			{Label: "Inseridos manualmente", Value: 5, Color: "#d4736b"},
-		},
-		GM: []GMCategoria{
-			{Nome: "Parede de concreto", Itens: []GMItem{
-				{Material: "Concreto", Kg: 2100},
-				{Material: "Aço", Kg: 400},
-				{Material: "Argamassa", Kg: 1100},
-			}},
-			{Nome: "Alvenaria", Itens: []GMItem{
-				{Material: "Concreto", Kg: 3015},
-				{Material: "Aço", Kg: 1450},
-				{Material: "Argamassa", Kg: 520},
-			}},
-			{Nome: "Fundação", Itens: []GMItem{
-				{Material: "Concreto", Kg: 4560},
-				{Material: "Aço", Kg: 350},
-				{Material: "Argamassa", Kg: 70},
-			}},
-			{Nome: "Cobertura", Itens: []GMItem{
-				{Material: "Concreto", Kg: 2220},
-				{Material: "Aço", Kg: 1050},
-				{Material: "Argamassa", Kg: 1750},
-			}},
-		},
-		GC: []GCPonto{
-			{X: 0.15, Y: 0.0179}, {X: 0.18, Y: 0.0357}, {X: 0.20, Y: 0.0536}, {X: 0.205, Y: 0.0714},
-			{X: 0.21, Y: 0.0893}, {X: 0.22, Y: 0.1071}, {X: 0.23, Y: 0.1250}, {X: 0.26, Y: 0.1429},
-			{X: 0.30, Y: 0.1607}, {X: 0.31, Y: 0.1786}, {X: 0.33, Y: 0.1964}, {X: 0.335, Y: 0.2143},
-			{X: 0.36, Y: 0.2321}, {X: 0.37, Y: 0.2500}, {X: 0.375, Y: 0.2679}, {X: 0.39, Y: 0.2857},
-			{X: 0.395, Y: 0.3036}, {X: 0.40, Y: 0.3214}, {X: 0.42, Y: 0.3393}, {X: 0.43, Y: 0.3571},
-			{X: 0.44, Y: 0.3750}, {X: 0.45, Y: 0.3929}, {X: 0.47, Y: 0.4107}, {X: 0.48, Y: 0.4286},
-			{X: 0.485, Y: 0.4464}, {X: 0.49, Y: 0.4643}, {X: 0.50, Y: 0.4821}, {X: 0.51, Y: 0.5000},
-			{X: 0.52, Y: 0.5179}, {X: 0.525, Y: 0.5357}, {X: 0.53, Y: 0.5536}, {X: 0.535, Y: 0.5714},
-			{X: 0.54, Y: 0.5893}, {X: 0.55, Y: 0.6071, Destaque: true}, {X: 0.555, Y: 0.6250},
-			{X: 0.56, Y: 0.6429}, {X: 0.565, Y: 0.6607}, {X: 0.57, Y: 0.6786}, {X: 0.575, Y: 0.6964},
-			{X: 0.58, Y: 0.7143}, {X: 0.62, Y: 0.7321}, {X: 0.63, Y: 0.7500}, {X: 0.64, Y: 0.7679},
-			{X: 0.645, Y: 0.7857}, {X: 0.655, Y: 0.8036}, {X: 0.665, Y: 0.8214}, {X: 0.68, Y: 0.8393},
-			{X: 0.69, Y: 0.8571}, {X: 0.70, Y: 0.8750}, {X: 0.72, Y: 0.8929}, {X: 0.73, Y: 0.9107},
-			{X: 0.74, Y: 0.9286}, {X: 0.755, Y: 0.9464}, {X: 0.76, Y: 0.9643}, {X: 0.90, Y: 0.9821},
-		},
-		SBC1: []SBCLinha{
-			{Nome: "Torre A", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Torre B", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Residencial modelo", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 32}, {Nome: "Fundação radier", Valor: 10}, {Nome: "Cobertura", Valor: 6}, {Nome: "teste", Valor: 15}}},
-		},
-		SBC2: []SBCLinha{
-			{Nome: "Torre A", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Torre B", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-		},
+		Sources: sources,
+		GM:      gm,
+		GC:      gcPoints,
+		SBC1:    buildSBCLinhas(project.Units, "energy"),
+		SBC2:    buildSBCLinhas(project.Units, "co2"),
 		CO2Chart:    co2Points,
 		EnergyChart: energyPoints,
 		SelectedIDs: []string{projectID.String()},
-		Units: []Unit{
-			{Name: "Torre A", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
-					{Name: "Concreto", Value: 2100, Percent: 60},
-					{Name: "Aço", Value: 400, Percent: 20},
-					{Name: "Argamassa", Value: 1100, Percent: 20},
-				}},
-				{Name: "Fundação radier", Percent: 30, Materials: []Material{
-					{Name: "Concreto", Value: 4560, Percent: 70},
-					{Name: "Aço", Value: 350, Percent: 15},
-					{Name: "Argamassa", Value: 70, Percent: 15},
-				}},
-			}},
-			{Name: "Torre B", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
-					{Name: "Concreto", Value: 2100, Percent: 60},
-					{Name: "Aço", Value: 400, Percent: 20},
-					{Name: "Argamassa", Value: 1100, Percent: 20},
-				}},
-				{Name: "Fundação radier", Percent: 30, Materials: []Material{
-					{Name: "Concreto", Value: 4560, Percent: 70},
-					{Name: "Aço", Value: 350, Percent: 15},
-					{Name: "Argamassa", Value: 70, Percent: 15},
-				}},
-			}},
-		},
+		Units:       unitsData,
 	}
 
 	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))

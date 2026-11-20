@@ -172,6 +172,7 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 		return result, err
 	}
 	result.sum(steelConsumption)
+	result.addMaterials(steelConsumption)
 
 	return result, nil
 }
@@ -265,19 +266,20 @@ func (p *PilesFoundation) toDataModule(moduleID, optionID uuid.UUID, result Cons
 	}
 
 	return &data.Module{
-		ID:             moduleID,
-		Type:           "piles_foundation",
-		OptionID:       optionID,
-		Data:           moduleData,
-		Source:         source,
-		Completed:      completed,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
-		TotalMaterial:  &result.Material,
-		FloorIDs:       []uuid.UUID{},
-		UnitID:         &p.UnitID,
+		ID:                  moduleID,
+		Type:                "piles_foundation",
+		OptionID:            optionID,
+		Data:                moduleData,
+		Source:              source,
+		Completed:           completed,
+		TotalCO2Min:         &result.CO2Min,
+		TotalCO2Max:         &result.CO2Max,
+		TotalEnergyMin:      &result.EnergyMin,
+		TotalEnergyMax:      &result.EnergyMax,
+		TotalMaterial:       &result.Material,
+		MaterialConsumption: result.Materials,
+		FloorIDs:            []uuid.UUID{},
+		UnitID:              &p.UnitID,
 	}
 }
 
