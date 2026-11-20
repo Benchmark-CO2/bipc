@@ -250,6 +250,21 @@ func addSelectedBenchmarkPoint(points []BenchmarkValue, id uuid.UUID, value floa
 	return append(points, BenchmarkValue{ID: id, Value: value})
 }
 
+// buildGCPoints maps a ranked Material benchmark series into the "Impacto de
+// CUM por tecnologia" scatter plot: x = CUM value (m³/m²), y = fraction of
+// better projects, with the selected project highlighted.
+func buildGCPoints(points []BenchmarkValue, selectedID uuid.UUID) []GCPonto {
+	gc := make([]GCPonto, 0, len(points))
+	for _, p := range points {
+		gc = append(gc, GCPonto{
+			X:        p.Value,
+			Y:        p.Y,
+			Destaque: p.ID == selectedID,
+		})
+	}
+	return gc
+}
+
 func unknownUnitLabel(unit string) string {
 	switch unit {
 	case "m2":
@@ -708,34 +723,6 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	}
 	gm := buildGMCategorias(projectMaterialEmissions)
 
-	var reportData = ReportData{
-		ProjectWithUnits: project,
-
-		TotalUH:     totalUH,
-		TotalUC:     totalUC,
-		TotalUCArea: totalUCArea,
-
-		SourcesTotal: sourcesTotal,
-
-		Report:                  report,
-		BaseLineCO2reference:    *report.Baseline.CO2.Reference,
-		BestC02Reference:        *report.BestProjects.CO2.Reference,
-		BaselineEnergyReference: *report.Baseline.Energy.Reference,
-		BestEnergyReference:     *report.BestProjects.Energy.Reference,
-		CO2Class:                co2Class,
-		CO2Total:                co2Total,
-		EnergyClass:             energyClass,
-		EnergyTotal:             energyTotal,
-
-		CumClass: "D",
-		CumTotal: 301,
-
-		UserModulesTable: buildUserModulesTable(project.UnknownModules),
-
-		TableCarbonEnergy: buildTableCarbonEnergy(projectMaterialEmissions, totalUCArea),
-		UnitsDetails:      []unitDetail{},
-	}
-
 	benchmarkProjects, err := app.models.Benchmark.GetProjectsBenchmark(data.GetProjectsBenchmarkFilters{})
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -770,25 +757,58 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	co2Points := normalizeScreenshotBenchmarkPoints(benchmarkSeries.CO2Min, benchmarkSeries.CO2Max)
 	energyPoints := normalizeScreenshotBenchmarkPoints(benchmarkSeries.EnergyMin, benchmarkSeries.EnergyMax)
 
+	var projectCUM float64
+	if totalConsumption, ok := project.Consumptions["total"]; ok && totalConsumption != nil && totalConsumption.Material != nil {
+		projectCUM = *totalConsumption.Material
+	}
+	benchmarkSeries.Material = addSelectedBenchmarkPoint(
+		benchmarkSeries.Material,
+		projectID,
+		projectCUM,
+	)
+	calculateGiniRank(benchmarkSeries.Material)
+	gcPoints := buildGCPoints(benchmarkSeries.Material, projectID)
+
+	projectCUMY := 0.0
+	for _, point := range benchmarkSeries.Material {
+		if point.ID == projectID {
+			projectCUMY = point.Y
+			break
+		}
+	}
+
+	var reportData = ReportData{
+		ProjectWithUnits: project,
+
+		TotalUH:     totalUH,
+		TotalUC:     totalUC,
+		TotalUCArea: totalUCArea,
+
+		SourcesTotal: sourcesTotal,
+
+		Report:                  report,
+		BaseLineCO2reference:    *report.Baseline.CO2.Reference,
+		BestC02Reference:        *report.BestProjects.CO2.Reference,
+		BaselineEnergyReference: *report.Baseline.Energy.Reference,
+		BestEnergyReference:     *report.BestProjects.Energy.Reference,
+		CO2Class:                co2Class,
+		CO2Total:                co2Total,
+		EnergyClass:             energyClass,
+		EnergyTotal:             energyTotal,
+
+		CumClass: classificationLetter(projectCUMY),
+		CumTotal: len(benchmarkSeries.Material),
+
+		UserModulesTable: buildUserModulesTable(project.UnknownModules),
+
+		TableCarbonEnergy: buildTableCarbonEnergy(projectMaterialEmissions, totalUCArea),
+		UnitsDetails:      []unitDetail{},
+	}
+
 	var jsonData = JSONData{
 		Sources: sources,
 		GM:      gm,
-		GC: []GCPonto{
-			{X: 0.15, Y: 0.0179}, {X: 0.18, Y: 0.0357}, {X: 0.20, Y: 0.0536}, {X: 0.205, Y: 0.0714},
-			{X: 0.21, Y: 0.0893}, {X: 0.22, Y: 0.1071}, {X: 0.23, Y: 0.1250}, {X: 0.26, Y: 0.1429},
-			{X: 0.30, Y: 0.1607}, {X: 0.31, Y: 0.1786}, {X: 0.33, Y: 0.1964}, {X: 0.335, Y: 0.2143},
-			{X: 0.36, Y: 0.2321}, {X: 0.37, Y: 0.2500}, {X: 0.375, Y: 0.2679}, {X: 0.39, Y: 0.2857},
-			{X: 0.395, Y: 0.3036}, {X: 0.40, Y: 0.3214}, {X: 0.42, Y: 0.3393}, {X: 0.43, Y: 0.3571},
-			{X: 0.44, Y: 0.3750}, {X: 0.45, Y: 0.3929}, {X: 0.47, Y: 0.4107}, {X: 0.48, Y: 0.4286},
-			{X: 0.485, Y: 0.4464}, {X: 0.49, Y: 0.4643}, {X: 0.50, Y: 0.4821}, {X: 0.51, Y: 0.5000},
-			{X: 0.52, Y: 0.5179}, {X: 0.525, Y: 0.5357}, {X: 0.53, Y: 0.5536}, {X: 0.535, Y: 0.5714},
-			{X: 0.54, Y: 0.5893}, {X: 0.55, Y: 0.6071, Destaque: true}, {X: 0.555, Y: 0.6250},
-			{X: 0.56, Y: 0.6429}, {X: 0.565, Y: 0.6607}, {X: 0.57, Y: 0.6786}, {X: 0.575, Y: 0.6964},
-			{X: 0.58, Y: 0.7143}, {X: 0.62, Y: 0.7321}, {X: 0.63, Y: 0.7500}, {X: 0.64, Y: 0.7679},
-			{X: 0.645, Y: 0.7857}, {X: 0.655, Y: 0.8036}, {X: 0.665, Y: 0.8214}, {X: 0.68, Y: 0.8393},
-			{X: 0.69, Y: 0.8571}, {X: 0.70, Y: 0.8750}, {X: 0.72, Y: 0.8929}, {X: 0.73, Y: 0.9107},
-			{X: 0.74, Y: 0.9286}, {X: 0.755, Y: 0.9464}, {X: 0.76, Y: 0.9643}, {X: 0.90, Y: 0.9821},
-		},
+		GC:      gcPoints,
 		SBC1: []SBCLinha{
 			{Nome: "Torre A", Series: []SBCSerie{
 				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
