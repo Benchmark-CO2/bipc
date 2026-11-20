@@ -205,6 +205,9 @@ func (s *StructuralMasonry) Validate(v *validator.Validator) {
 
 func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidacSteel, sidacMortar SidacMaterial) error {
 	var result Consumption
+
+	groutCO2Min, groutCO2Max, groutEnergyMin, groutEnergyMax := 0.0, 0.0, 0.0, 0.0
+	var groutSteel Consumption
 	for _, g := range me.Grout {
 		for _, gv := range g.Volumes {
 			val, ok := sidacGrout.KgCO2[float64(gv.Fgk)]
@@ -213,6 +216,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			}
 			result.CO2Min += val.Min * gv.Volume
 			result.CO2Max += val.Max * gv.Volume
+			groutCO2Min += val.Min * gv.Volume
+			groutCO2Max += val.Max * gv.Volume
 
 			val, ok = sidacGrout.MJ[float64(gv.Fgk)]
 			if !ok {
@@ -220,14 +225,29 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			}
 			result.EnergyMin += val.Min * gv.Volume
 			result.EnergyMax += val.Max * gv.Volume
+			groutEnergyMin += val.Min * gv.Volume
+			groutEnergyMax += val.Max * gv.Volume
 		}
 		steelConsumption, err := CalculateSteelConsumption(g.Steel)
 		if err != nil {
 			return err
 		}
+		groutSteel.sum(steelConsumption)
 		result.sum(steelConsumption)
 	}
 
+	if groutCO2Min != 0 || groutCO2Max != 0 || groutEnergyMin != 0 || groutEnergyMax != 0 {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:  MaterialClassConcrete,
+			CO2Min:    groutCO2Min,
+			CO2Max:    groutCO2Max,
+			EnergyMin: groutEnergyMin,
+			EnergyMax: groutEnergyMax,
+		})
+	}
+	result.Materials = append(result.Materials, groutSteel.Materials...)
+
+	mortarCO2Min, mortarCO2Max, mortarEnergyMin, mortarEnergyMax := 0.0, 0.0, 0.0, 0.0
 	for _, m := range me.Mortar {
 		val, ok := sidacMortar.KgCO2[float64(m.Fak)]
 		if !ok {
@@ -235,6 +255,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		result.CO2Min += val.Min * m.Volume
 		result.CO2Max += val.Max * m.Volume
+		mortarCO2Min += val.Min * m.Volume
+		mortarCO2Max += val.Max * m.Volume
 
 		val, ok = sidacMortar.MJ[float64(m.Fak)]
 		if !ok {
@@ -242,8 +264,21 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		result.EnergyMin += val.Min * m.Volume
 		result.EnergyMax += val.Max * m.Volume
+		mortarEnergyMin += val.Min * m.Volume
+		mortarEnergyMax += val.Max * m.Volume
 	}
 
+	if mortarCO2Min != 0 || mortarCO2Max != 0 || mortarEnergyMin != 0 || mortarEnergyMax != 0 {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:  MaterialClassMortar,
+			CO2Min:    mortarCO2Min,
+			CO2Max:    mortarCO2Max,
+			EnergyMin: mortarEnergyMin,
+			EnergyMax: mortarEnergyMax,
+		})
+	}
+
+	blocksCO2Min, blocksCO2Max, blocksEnergyMin, blocksEnergyMax := 0.0, 0.0, 0.0, 0.0
 	for _, b := range me.Blocks {
 		blockMass, err := GetBlockMass(b.Type, b.Fbk)
 		if err != nil {
@@ -263,6 +298,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		result.CO2Min += val.Min * float64(b.Quantity) * massFactor
 		result.CO2Max += val.Max * float64(b.Quantity) * massFactor
+		blocksCO2Min += val.Min * float64(b.Quantity) * massFactor
+		blocksCO2Max += val.Max * float64(b.Quantity) * massFactor
 
 		val, ok = sidacBlockData.MJ[float64(b.Fbk)]
 		if !ok {
@@ -270,9 +307,22 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		result.EnergyMin += val.Min * float64(b.Quantity) * massFactor
 		result.EnergyMax += val.Max * float64(b.Quantity) * massFactor
+		blocksEnergyMin += val.Min * float64(b.Quantity) * massFactor
+		blocksEnergyMax += val.Max * float64(b.Quantity) * massFactor
+	}
+
+	if blocksCO2Min != 0 || blocksCO2Max != 0 || blocksEnergyMin != 0 || blocksEnergyMax != 0 {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:  MaterialClassBlocks,
+			CO2Min:    blocksCO2Min,
+			CO2Max:    blocksCO2Max,
+			EnergyMin: blocksEnergyMin,
+			EnergyMax: blocksEnergyMax,
+		})
 	}
 
 	total.sum(result)
+	total.addMaterials(result)
 	return nil
 }
 
@@ -286,12 +336,11 @@ func (s *StructuralMasonry) Calculate() (Consumption, error) {
 		return Consumption{}, err
 	}
 	total.sum(steelConsumption)
+	total.addMaterials(steelConsumption)
 
 	if err := addMansonryElement(&total, s.Masonry, sidacGroutData, sidacSteelData, sidacMortarData); err != nil {
 		return Consumption{}, err
 	}
-
-	// TODO: material
 
 	return total, nil
 }
@@ -434,18 +483,19 @@ func (s *StructuralMasonry) toDataModule(moduleID, optionID uuid.UUID, result Co
 	}
 
 	return &data.Module{
-		ID:             moduleID,
-		Type:           "structural_masonry",
-		OptionID:       optionID,
-		Data:           moduleData,
-		Source:         source,
-		Completed:      completed,
-		TotalCO2Min:    &result.CO2Min,
-		TotalCO2Max:    &result.CO2Max,
-		TotalEnergyMin: &result.EnergyMin,
-		TotalEnergyMax: &result.EnergyMax,
-		TotalMaterial:  &result.Material,
-		FloorIDs:       s.FloorIDs,
+		ID:                  moduleID,
+		Type:                "structural_masonry",
+		OptionID:            optionID,
+		Data:                moduleData,
+		Source:              source,
+		Completed:           completed,
+		TotalCO2Min:         &result.CO2Min,
+		TotalCO2Max:         &result.CO2Max,
+		TotalEnergyMin:      &result.EnergyMin,
+		TotalEnergyMax:      &result.EnergyMax,
+		TotalMaterial:       &result.Material,
+		MaterialConsumption: result.Materials,
+		FloorIDs:            s.FloorIDs,
 	}
 }
 

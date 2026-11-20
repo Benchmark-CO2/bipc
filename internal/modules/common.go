@@ -103,7 +103,22 @@ type Consumption struct {
 	EnergyMin float64 `json:"energy_min"`
 	EnergyMax float64 `json:"energy_max"`
 	Material  float64 `json:"material"`
+
+	// Materials holds the per-material-class share of this consumption
+	// (absolute values summing to the aggregate fields above). Grouped by
+	// class (Concreto, Aço, Argamassa, Blocos) for report display.
+	Materials []data.MaterialConsumption `json:"materials,omitempty"`
 }
+
+// Material class labels used for the per-material breakdown. They follow the
+// module's own material naming (English). Display localization (e.g. "Aço" in
+// PT-BR) is applied later when rendering the report.
+const (
+	MaterialClassConcrete = "concrete"
+	MaterialClassSteel    = "steel"
+	MaterialClassMortar   = "mortar"
+	MaterialClassBlocks   = "blocks"
+)
 
 func (c *Consumption) sum(value Consumption) {
 	c.CO2Min += value.CO2Min
@@ -111,6 +126,28 @@ func (c *Consumption) sum(value Consumption) {
 	c.EnergyMin += value.EnergyMin
 	c.EnergyMax += value.EnergyMax
 	c.Material += value.Material
+}
+
+// addMaterials merges the material breakdown of another consumption into this
+// one, aggregating entries with the same material class. It only touches the
+// breakdown; aggregate fields are summed via sum().
+func (c *Consumption) addMaterials(value Consumption) {
+	for _, material := range value.Materials {
+		merged := false
+		for i := range c.Materials {
+			if c.Materials[i].Material == material.Material {
+				c.Materials[i].CO2Min += material.CO2Min
+				c.Materials[i].CO2Max += material.CO2Max
+				c.Materials[i].EnergyMin += material.EnergyMin
+				c.Materials[i].EnergyMax += material.EnergyMax
+				merged = true
+				break
+			}
+		}
+		if !merged {
+			c.Materials = append(c.Materials, material)
+		}
+	}
 }
 
 func concreteVolumeFromElement(ce ConcreteElement) float64 {
@@ -301,6 +338,16 @@ func CalculateSteelConsumption(materials []SteelMaterial) (Consumption, error) {
 		result.EnergyMax += steelEnergy.Max * material.Mass
 	}
 
+	if len(materials) > 0 {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:  MaterialClassSteel,
+			CO2Min:    result.CO2Min,
+			CO2Max:    result.CO2Max,
+			EnergyMin: result.EnergyMin,
+			EnergyMax: result.EnergyMax,
+		})
+	}
+
 	return result, nil
 }
 
@@ -323,6 +370,16 @@ func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
 		}
 		result.EnergyMin += energyVal.Min * item.Volume
 		result.EnergyMax += energyVal.Max * item.Volume
+	}
+
+	if len(items) > 0 {
+		result.Materials = append(result.Materials, data.MaterialConsumption{
+			Material:  MaterialClassConcrete,
+			CO2Min:    result.CO2Min,
+			CO2Max:    result.CO2Max,
+			EnergyMin: result.EnergyMin,
+			EnergyMax: result.EnergyMax,
+		})
 	}
 
 	return result
@@ -891,6 +948,7 @@ func consumptionFromDataModule(d *data.Module) *Consumption {
 		EnergyMin: *d.TotalEnergyMin,
 		EnergyMax: *d.TotalEnergyMax,
 		Material:  material,
+		Materials: d.MaterialConsumption,
 	}
 }
 
