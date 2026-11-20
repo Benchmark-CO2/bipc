@@ -1,6 +1,9 @@
 import axios from "axios";
 import type { Translations } from "@/i18n/translations/pt-BR";
 
+const TQS_FLOOR_MISMATCH_PATTERN =
+  /a unidade possui (\d+) pavimentos, enquanto o arquivo possui (\d+)/;
+
 /**
  * Extracts a user-friendly, translated error message from any error value.
  *
@@ -27,6 +30,27 @@ export function parseApiError(error: unknown, t: Translations): string {
         : undefined;
 
     switch (status) {
+      case 400:
+        if (typeof backendError === "string") {
+          // Mensagens fixas do upload TQS (`cmd/api/file_upload.go`) e de
+          // `data.ErrUnitIsNotTower`; o backend não manda código de erro.
+          const tqsFloorMismatch = TQS_FLOOR_MISMATCH_PATTERN.exec(backendError);
+          if (tqsFloorMismatch) {
+            return t.drawerIFC.tqsFloorMismatch
+              .replace("{unitFloors}", tqsFloorMismatch[1] ?? "")
+              .replace("{fileFloors}", tqsFloorMismatch[2] ?? "");
+          }
+          if (backendError.includes("the specified unit is not a tower")) {
+            return t.apiErrors.unitNotTower;
+          }
+        }
+        return (
+          backendMessage ??
+          (typeof backendError === "string"
+            ? backendError
+            : t.errors.unexpectedError)
+        );
+
       case 401:
         return t.apiErrors.authRequired;
 

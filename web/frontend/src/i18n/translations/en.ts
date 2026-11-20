@@ -19,10 +19,7 @@ export const en: Translations = {
     learnMore: "Learn more",
     expand: "Expand",
     collapse: "Collapse",
-    ifcImport: "Import from IFC",
-    ifcImportTqs: "Import from IFC/TQS",
-    ifcXlsxImport: "Import from IFC/XLSX",
-    ifcXlsxImportTqs: "Import from IFC/XLSX/TQS",
+    importFile: "Import file",
     orLabel: "or",
     select: "Select",
     required: "Required",
@@ -1510,6 +1507,7 @@ export const en: Translations = {
     predictDate: "Expected launch date: {date}",
   },
   apiErrors: {
+    unitNotTower: "This operation is only available for tower buildings.",
     networkError:
       "No connection to the server. Check your internet connection and try again.",
     accountNotActivated:
@@ -1742,6 +1740,14 @@ export const en: Translations = {
       "No simulation disciplines registered in this project. Create a discipline before importing files.",
     disciplinesGoTo: "Open Disciplines tab",
     newDisciplineLink: "Register new discipline",
+    unitLabel: "Building",
+    unitPlaceholder: "Select the building",
+    noUnits: "No buildings registered",
+    createUnitLink: "Create building",
+    tqsUnitFloorsHint:
+      "This building has {count} floor(s). The TQS file must have the same number.",
+    tqsFloorMismatch:
+      "The building has {unitFloors} floor(s), but the TQS file has {fileFloors}. Adjust the building floors or choose another one.",
     geometryIncludedLabel:
       "Mode 1 — Optimized calculation (only geometries needed for JSONs)",
     geometrySkippedLabel:

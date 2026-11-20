@@ -17,10 +17,7 @@ export const ptBR = {
     learnMore: "Saiba mais",
     expand: "Expandir",
     collapse: "Recolher",
-    ifcImport: "Importar do IFC",
-    ifcImportTqs: "Importar de IFC/TQS",
-    ifcXlsxImport: "Importar de IFC/XLSX",
-    ifcXlsxImportTqs: "Importar de IFC/XLSX/TQS",
+    importFile: "Importar arquivo",
     orLabel: "ou",
     select: "Selecione",
     required: "Obrigatório",
@@ -1522,6 +1519,7 @@ export const ptBR = {
     predictDate: "Previsão de lançamento: {date}",
   },
   apiErrors: {
+    unitNotTower: "Esta operação só está disponível para edificações do tipo torre.",
     networkError:
       "Sem conexão com o servidor. Verifique sua internet e tente novamente.",
     accountNotActivated:
@@ -1762,6 +1760,14 @@ export const ptBR = {
       "Nenhuma disciplina de simulação cadastrada neste projeto. Crie uma disciplina antes de importar arquivos.",
     disciplinesGoTo: "Abrir aba Disciplinas",
     newDisciplineLink: "Cadastrar nova disciplina",
+    unitLabel: "Edificação",
+    unitPlaceholder: "Selecione a edificação",
+    noUnits: "Nenhuma edificação cadastrada",
+    createUnitLink: "Criar edificação",
+    tqsUnitFloorsHint:
+      "Esta edificação tem {count} pavimento(s). O arquivo TQS precisa ter a mesma quantidade.",
+    tqsFloorMismatch:
+      "A edificação tem {unitFloors} pavimento(s), mas o arquivo TQS tem {fileFloors}. Ajuste os pavimentos da edificação ou escolha outra.",
     geometryIncludedLabel:
       "Modo 1 — Cálculo otimizado (somente geometrias necessárias para os JSONs)",
     geometrySkippedLabel:

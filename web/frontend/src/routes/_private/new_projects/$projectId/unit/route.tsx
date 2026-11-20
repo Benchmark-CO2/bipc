@@ -3,7 +3,6 @@ import { postDuplicateUnit } from "@/actions/units/postDuplicateUnit";
 import {
   DrawerFormUnit,
   DrawerIFCImport,
-  getImportTriggerLabel,
 } from "@/components/layout";
 import ModalSimple from "@/components/layout/modal-simple";
 import { Button } from "@/components/ui/button";
@@ -182,7 +181,7 @@ function RouteComponent() {
                 unitId={params.unitId}
                 triggerComponent={
                   <SimpleTooltip
-                    content={getImportTriggerLabel(t, { withTqs: false })}
+                    content={t.common.importFile}
                     side="bottom"
                   >
                     <Button variant="outline-bipc" size="icon-lg">
