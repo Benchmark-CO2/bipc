@@ -1,10 +1,7 @@
 export { default as DrawerFormProject } from "./drawer-form-project";
 export { default as DrawerFormUnit } from "./drawer-form-unit/index";
 export { default as DrawerFormModule } from "./drawer-form-module";
-export {
-  default as DrawerIFCImport,
-  getImportTriggerLabel,
-} from "./drawer-ifc-import";
+export { default as DrawerIFCImport } from "./drawer-ifc-import";
 export type { IFCAccessMode } from "./drawer-ifc-import";
 export { default as ProjectTable } from "./project-table";
 export { default as PublicHeader } from "./public-header";

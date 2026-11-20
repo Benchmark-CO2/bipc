@@ -70,6 +70,7 @@ import { SimpleTooltip } from "../ui/simple-tooltip";
 import { ComboboxOption, FreeformCombobox } from "../ui/freeform-combobox";
 import DrawerStepperIFC from "./drawer-stepper-ifc";
 import DrawerFormDisciplines from "./drawer-form-disciplines";
+import DrawerFormUnit from "./drawer-form-unit";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,24 +83,17 @@ export type IFCAccessMode = "project" | "unit" | "simulation";
 const isProcessorFileType = (ft: FileType): ft is TIfcProcessorFileType =>
   ft !== "tqs";
 
-/** Abas por contexto: TQS só na simulação; XLSX atrás da flag `xlsxImport`. */
-const getAvailableFileTypes = (mode: IFCAccessMode): FileType[] => {
+/**
+ * Abas do drawer: XLSX atrás da flag `xlsxImport`. TQS aparece em todos os
+ * contextos; sem unidade/disciplina de contexto, o usuário as escolhe na aba.
+ */
+const getAvailableFileTypes = (): FileType[] => {
   const fileTypes: FileType[] = ["ifc"];
   if (posLaunchFeatures.xlsxImport.enabled) fileTypes.push("xlsx");
-  if (mode === "simulation") fileTypes.push("tqs");
+  fileTypes.push("tqs");
   return fileTypes;
 };
 
-/** Rótulo do botão que abre o drawer, coerente com as abas visíveis. */
-export const getImportTriggerLabel = (
-  t: Translations,
-  { withTqs }: { withTqs: boolean },
-) => {
-  if (posLaunchFeatures.xlsxImport.enabled) {
-    return withTqs ? t.common.ifcXlsxImportTqs : t.common.ifcXlsxImport;
-  }
-  return withTqs ? t.common.ifcImportTqs : t.common.ifcImport;
-};
 
 const FILE_TYPE_ACCEPT: Record<FileType, string> = {
   ifc: ".ifc",
@@ -214,6 +208,84 @@ function FileTypeTabs({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Select de disciplina (simulation) + link para cadastrar uma nova. */
+function DisciplineSelectField({
+  value,
+  onChange,
+  roles,
+  isLoading,
+  projectId,
+  unitId,
+  onDisciplineCreated,
+}: {
+  value: string;
+  onChange: (roleId: string) => void;
+  roles: TRole[];
+  isLoading: boolean;
+  projectId: string;
+  unitId?: string;
+  onDisciplineCreated: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm text-muted-foreground">
+        {t.drawerIFC.disciplineLabel}{" "}
+        <span className="text-destructive">*</span>
+      </label>
+      <Select
+        value={value}
+        onValueChange={onChange}
+        disabled={isLoading || roles.length === 0}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue
+            placeholder={
+              isLoading ? t.common.loading : t.drawerIFC.disciplinePlaceholder
+            }
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {isLoading ? (
+            <SelectItem value="__loading__" disabled>
+              {t.common.loading}
+            </SelectItem>
+          ) : roles.length === 0 ? (
+            <SelectItem value="__empty__" disabled>
+              {t.drawerIFC.disciplinePlaceholder}
+            </SelectItem>
+          ) : (
+            roles.map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                {r.name}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+      <div className="flex items-center justify-end pt-0.5">
+        <DrawerFormDisciplines
+          componentTrigger={
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className="gap-1 px-0 h-auto text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center"
+            >
+              <Plus className="h-3 w-3" />
+              {t.drawerIFC.newDisciplineLink}
+            </Button>
+          }
+          projectId={projectId}
+          unitId={unitId}
+          roles={roles.map((r) => r.name)}
+          onCreateSuccess={onDisciplineCreated}
+        />
+      </div>
     </div>
   );
 }
@@ -379,6 +451,9 @@ export default function DrawerIFCImport({
   const [importErrorMessage, setImportErrorMessage] = useState("");
   const [fileWarningMessage, setFileWarningMessage] = useState("");
   const [selectedRoleId, setSelectedRoleId] = useState("");
+  // Edificação escolhida na aba TQS quando o drawer não tem `unitId` (projeto).
+  const [selectedTqsUnitId, setSelectedTqsUnitId] = useState("");
+  const effectiveUnitId = unitId ?? selectedTqsUnitId;
 
   // "Already imported" section state
   const [selectedFileId, setSelectedFileId] = useState("");
@@ -395,12 +470,15 @@ export default function DrawerIFCImport({
   const [floorMismatchData, setFloorMismatchData] =
     useState<TFloorMismatchError | null>(null);
 
-  // Busca dados da unidade existente (unidade do contexto) para poder comparar
-  // número de pavimentos — roda apenas no modo simulation quando unitId existe.
+  // Busca dados da unidade para comparar o número de pavimentos: a do contexto
+  // (modo simulation, validação pré-stepper) ou a escolhida na aba TQS (dica).
   const { data: existingUnitData } = useQuery({
-    queryKey: ["unit", projectId, unitId, "ifc-import-context"],
-    queryFn: () => getUnitByUUID(projectId, unitId || ""),
-    enabled: mode === "simulation" && isOpen && Boolean(unitId),
+    queryKey: ["unit", projectId, effectiveUnitId, "ifc-import-context"],
+    queryFn: () => getUnitByUUID(projectId, effectiveUnitId),
+    enabled:
+      isOpen &&
+      Boolean(effectiveUnitId) &&
+      ((mode === "simulation" && Boolean(unitId)) || fileType === "tqs"),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -411,11 +489,10 @@ export default function DrawerIFCImport({
   const queryClient = useQueryClient();
   const clientId = user?.id ?? "";
 
-  const availableFileTypes = getAvailableFileTypes(mode);
+  const availableFileTypes = getAvailableFileTypes();
   const hasFileTypeTabs = availableFileTypes.length > 1;
   const isProcessorFile = isProcessorFileType(fileType);
   const fileTypeTexts = getFileTypeTexts(translations, fileType);
-  const canUploadTqs = mode === "simulation" && !!unitId && !!roleId;
 
   // Carregar disciplinas (roles) do projeto — filtramos apenas simulation=true
   const { data: projectDataForRoles, isLoading: isLoadingProjectRoles } =
@@ -430,27 +507,46 @@ export default function DrawerIFCImport({
       (projectDataForRoles?.data?.project?.roles as TRole[] | undefined) ?? [];
     return roles.filter((r) => r.simulation);
   }, [projectDataForRoles]);
+  const projectUnits = projectDataForRoles?.data?.project?.units ?? [];
 
   // Regra do usuário: só mostra select quando a prop roleId não é fornecida.
   // Quando roleId prop existe (mode simulation), NÃO mostra o select e usa o prop.
   const needsRolePrompt = !roleId;
   const effectiveRoleId = roleId ?? selectedRoleId;
+  const canUploadTqs = Boolean(effectiveUnitId) && Boolean(effectiveRoleId);
+  const tqsUnitFloorsCount =
+    fileType === "tqs" && effectiveUnitId
+      ? existingUnitData?.data?.unit?.floors?.length
+      : undefined;
 
   // Callback disparado logo após DrawerFormDisciplines criar disciplina com sucesso.
-  // A invalidacao da query ["project", projectId] ja acontece no proprio drawer,
-  // entao simulationRoles sera atualizado; aqui forçamos a selecao automatica
-  // da 1a discipline (que sera a recem-criada quando a lista antes era vazia).
-  const handleDisciplineCreated = () => {
+  // O drawer só invalida ["project", projectId] (sem aguardar); aqui esperamos o
+  // refetch e selecionamos a disciplina que não existia antes.
+  const handleDisciplineCreated = async () => {
     if (!needsRolePrompt) return;
+    const previousIds = new Set(simulationRoles.map((r) => r.id));
+    await queryClient.refetchQueries({
+      queryKey: ["project", projectId],
+      exact: true,
+    });
     const currentRoles =
       (queryClient.getQueryData<{ data?: { project?: { roles?: TRole[] } } }>([
         "project",
         projectId,
       ])?.data?.project?.roles as TRole[] | undefined) ?? [];
     const sims = currentRoles.filter((r) => r.simulation);
-    if (sims.length > 0) {
-      setSelectedRoleId(sims[0]!.id);
-    }
+    const created = sims.find((r) => !previousIds.has(r.id)) ?? sims[0];
+    if (created) setSelectedRoleId(created.id);
+  };
+
+  // Mesma ideia para "Criar edificação" na aba TQS: só seleciona depois que a
+  // lista de unidades já tem a nova, senão o Select fica sem item visível.
+  const handleTqsUnitCreated = async (createdUnitId: string) => {
+    await queryClient.refetchQueries({
+      queryKey: ["project", projectId],
+      exact: true,
+    });
+    setSelectedTqsUnitId(createdUnitId);
   };
 
   // Pré-selecionar a 1ª discipline simulation quando abrir e nada selecionado,
@@ -468,17 +564,30 @@ export default function DrawerIFCImport({
   }, [needsRolePrompt, isOpen, simulationRoles, selectedRoleId]);
 
   const { mutate: uploadTqsFile, isPending: isUploadingTqsFile } = useMutation({
-    mutationFn: () =>
-      postDisciplineFileUpload(projectId, unitId!, roleId!, {
-        file: uploadFile!,
+    mutationFn: (vars: { unitId: string; roleId: string; file: File }) =>
+      postDisciplineFileUpload(projectId, vars.unitId, vars.roleId, {
+        file: vars.file,
         source: "tqs",
       }),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       toast.success(t.drawerIFC.importSuccess);
       queryClient.invalidateQueries({
-        queryKey: ["options", projectId, unitId],
+        queryKey: ["options", projectId, vars.unitId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["unit", projectId, vars.unitId],
       });
       handleClose(true);
+      // Fora da simulação, a simulação "Importação TQS" criada não aparece na
+      // tela atual: leva o usuário até ela.
+      if (!roleId) {
+        void navigate({
+          to: "/new_projects/$projectId/unit/$unitId/constructive-technologies",
+          params: { projectId, unitId: vars.unitId },
+          search: { dcp: vars.roleId },
+        });
+      }
     },
     onError: (error) => {
       const errorMessage = parseApiError(error, t);
@@ -909,6 +1018,7 @@ export default function DrawerIFCImport({
     setStepperResult(null);
     setStepperOpen(false);
     setSelectedRoleId("");
+    setSelectedTqsUnitId("");
     setShowAllIfcRequests(false);
     setFloorMismatchOpen(false);
     setFloorMismatchData(null);
@@ -945,7 +1055,11 @@ export default function DrawerIFCImport({
     if (fileType === "tqs") {
       if (!uploadFile || !canUploadTqs) return;
       setImportErrorMessage("");
-      uploadTqsFile();
+      uploadTqsFile({
+        unitId: effectiveUnitId,
+        roleId: effectiveRoleId,
+        file: uploadFile,
+      });
       return;
     }
 
@@ -1142,6 +1256,94 @@ export default function DrawerIFCImport({
                       </div>
                     )}
 
+                  {fileType === "tqs" && (
+                    <div className="flex flex-col gap-4">
+                      {/* Disciplina — só quando roleId prop não passado */}
+                      {needsRolePrompt && (
+                        <DisciplineSelectField
+                          value={selectedRoleId}
+                          onChange={setSelectedRoleId}
+                          roles={simulationRoles}
+                          isLoading={isLoadingProjectRoles}
+                          projectId={projectId}
+                          unitId={effectiveUnitId || undefined}
+                          onDisciplineCreated={handleDisciplineCreated}
+                        />
+                      )}
+
+                      {/* Edificação — só quando unitId prop não passado */}
+                      {!unitId && (
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-sm text-muted-foreground">
+                            {t.drawerIFC.unitLabel}{" "}
+                            <span className="text-destructive">*</span>
+                          </label>
+                          <Select
+                            value={selectedTqsUnitId}
+                            onValueChange={(id) => {
+                              setSelectedTqsUnitId(id);
+                              setImportErrorMessage("");
+                            }}
+                            disabled={
+                              isLoadingProjectRoles ||
+                              projectUnits.length === 0
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  isLoadingProjectRoles
+                                    ? t.common.loading
+                                    : projectUnits.length === 0
+                                      ? t.drawerIFC.noUnits
+                                      : t.drawerIFC.unitPlaceholder
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {projectUnits.map((u) => (
+                                <SelectItem key={u.id} value={u.id}>
+                                  {u.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center justify-end pt-0.5">
+                            <DrawerFormUnit
+                              triggerComponent={
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  className="gap-1 px-0 h-auto text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                  {t.drawerIFC.createUnitLink}
+                                </Button>
+                              }
+                              projectId={projectId}
+                              onCreateSuccess={(unit) =>
+                                void handleTqsUnitCreated(unit.id)
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {tqsUnitFloorsCount !== undefined && (
+                        <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <p>
+                            {t.drawerIFC.tqsUnitFloorsHint.replace(
+                              "{count}",
+                              String(tqsUnitFloorsCount),
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Drop zone */}
                   <DropZone
                     fileType={fileType}
@@ -1149,9 +1351,8 @@ export default function DrawerIFCImport({
                     onFileChange={(f) => {
                       setUploadFile(f);
                       setFileWarningMessage("");
-                      if (!f) {
-                        setImportErrorMessage("");
-                      }
+                      // O erro era do arquivo anterior; não vale para o novo.
+                      setImportErrorMessage("");
                     }}
                     onInvalidFile={setFileWarningMessage}
                   />
@@ -1264,68 +1465,15 @@ export default function DrawerIFCImport({
                     <div className="flex flex-col gap-4">
                       {/* Discipline select — SÓ quando roleId prop não passado */}
                       {needsRolePrompt && (
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-sm text-muted-foreground">
-                            {t.drawerIFC.disciplineLabel}{" "}
-                            <span className="text-destructive">*</span>
-                          </label>
-                          <Select
-                            value={selectedRoleId}
-                            onValueChange={setSelectedRoleId}
-                            disabled={
-                              isLoadingProjectRoles ||
-                              simulationRoles.length === 0
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue
-                                placeholder={
-                                  isLoadingProjectRoles
-                                    ? t.common.loading
-                                    : simulationRoles.length === 0
-                                      ? t.drawerIFC.disciplinePlaceholder
-                                      : t.drawerIFC.disciplinePlaceholder
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {isLoadingProjectRoles ? (
-                                <SelectItem value="__loading__" disabled>
-                                  {t.common.loading}
-                                </SelectItem>
-                              ) : simulationRoles.length === 0 ? (
-                                <SelectItem value="__empty__" disabled>
-                                  {t.drawerIFC.disciplinePlaceholder}
-                                </SelectItem>
-                              ) : (
-                                simulationRoles.map((r) => (
-                                  <SelectItem key={r.id} value={r.id}>
-                                    {r.name}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                          <div className="flex items-center justify-end pt-0.5">
-                            <DrawerFormDisciplines
-                              componentTrigger={
-                                <Button
-                                  type="button"
-                                  variant="link"
-                                  size="sm"
-                                  className="gap-1 px-0 h-auto text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                  {t.drawerIFC.newDisciplineLink}
-                                </Button>
-                              }
-                              projectId={projectId}
-                              unitId={unitId}
-                              roles={simulationRoles.map((r) => r.name)}
-                              onCreateSuccess={handleDisciplineCreated}
-                            />
-                          </div>
-                        </div>
+                        <DisciplineSelectField
+                          value={selectedRoleId}
+                          onChange={setSelectedRoleId}
+                          roles={simulationRoles}
+                          isLoading={isLoadingProjectRoles}
+                          projectId={projectId}
+                          unitId={unitId}
+                          onDisciplineCreated={handleDisciplineCreated}
+                        />
                       )}
 
                       {/* Toggle visibilidade + Discipline select (quando aplicável) em GRID 2 cols */}

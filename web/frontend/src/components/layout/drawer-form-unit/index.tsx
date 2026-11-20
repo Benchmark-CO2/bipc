@@ -15,6 +15,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { IUnit } from "@/types/units";
 import { Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FieldErrors, useForm } from "react-hook-form";
@@ -56,6 +57,9 @@ interface DrawerFormUnitProps {
     formInput: UnitFormInput;
     unit: any;
   }) => void;
+  // Fora do stepperMode: recebe a unidade criada no lugar da navegação para o
+  // empreendimento (ex.: "Criar edificação" no drawer de importação TQS).
+  onCreateSuccess?: (unit: IUnit) => void;
 }
 
 const DrawerFormUnit = ({
@@ -69,6 +73,7 @@ const DrawerFormUnit = ({
   initialFormData,
   takenUnitNames,
   onSubmitSuccess,
+  onCreateSuccess,
 }: DrawerFormUnitProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
@@ -209,6 +214,8 @@ const DrawerFormUnit = ({
           formInput: form.getValues(),
           unit: data.data.unit,
         });
+      } else if (data.data.unit && onCreateSuccess) {
+        onCreateSuccess(data.data.unit);
       } else if (data.data.unit) {
         navigate({
           to: `/new_projects/${data.data.unit.project_id}/`,

@@ -16,7 +16,6 @@ import {
   DialogCreateSimulation,
   DrawerFormModule,
   DrawerIFCImport,
-  getImportTriggerLabel,
 } from "@/components/layout";
 import ModalConfirmDelete from "@/components/layout/modal-confirm-delete";
 import ModalSimple from "@/components/layout/modal-simple";
@@ -823,7 +822,7 @@ function RouteComponent() {
               roleId={roleId}
               triggerComponent={
                 <Button variant="bipc">
-                  {getImportTriggerLabel(t, { withTqs: true })}
+                  {t.common.importFile}
                 </Button>
               }
             />
@@ -848,7 +847,7 @@ function RouteComponent() {
           roleId={roleId}
           triggerComponent={
             <Button variant="outline-bipc">
-              {getImportTriggerLabel(t, { withTqs: true })}
+              {t.common.importFile}
             </Button>
           }
         />
