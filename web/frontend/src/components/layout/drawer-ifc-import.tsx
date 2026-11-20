@@ -892,13 +892,16 @@ export default function DrawerIFCImport({
       },
     });
 
-  const handleClose = (force?: boolean) => {
-    if (!force && (isUploadingTqsFile || isImportingIfcFile)) return;
-    setIsOpen(false);
+  // Também roda ao abrir o drawer: "Utilizar dados selecionados" fecha o drawer
+  // sem passar por handleClose (o stepper ainda usa o arquivo e a disciplina
+  // selecionados), então o reset fica para a próxima abertura.
+  const resetImportState = () => {
     setFileType("ifc");
     setSoftware("");
     setVersion("");
-    setGeometriesCalculationMode(1);
+    setGeometriesCalculationMode(
+      GEOMETRIES_CALCULATION_MODE.ENABLED_OPTIMIZED,
+    );
     setUploadFile(null);
     setImportErrorMessage("");
     setFileWarningMessage("");
@@ -909,6 +912,12 @@ export default function DrawerIFCImport({
     setShowAllIfcRequests(false);
     setFloorMismatchOpen(false);
     setFloorMismatchData(null);
+  };
+
+  const handleClose = (force?: boolean) => {
+    if (!force && (isUploadingTqsFile || isImportingIfcFile)) return;
+    setIsOpen(false);
+    resetImportState();
   };
 
   const handleFileTypeChange = (ft: FileType) => {
@@ -976,14 +985,8 @@ export default function DrawerIFCImport({
             handleClose(false);
             return;
           }
-          setIsOpen(open);
-          if (open && !hasFileTypeTabs) {
-            setFileType("ifc");
-            setSoftware("");
-            setVersion("");
-            setUploadFile(null);
-            setImportErrorMessage("");
-          }
+          resetImportState();
+          setIsOpen(true);
         }}
         onClose={handleClose}
         dismissible={false}
