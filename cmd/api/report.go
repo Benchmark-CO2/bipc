@@ -265,6 +265,139 @@ func buildGCPoints(points []BenchmarkValue, selectedID uuid.UUID) []GCPonto {
 	return gc
 }
 
+// buildSBCLinhas builds the "Consumo total de energia por tecnologia" (energy)
+// and "Total de Emissões por tecnologia" (co2) stacked-bar charts. Each line is
+// a project unit; each series is a technology with its average consumption
+// ((min+max)/2), matching the same values already computed for the project GET
+// and the benchmark report.
+func buildSBCLinhas(units []data.ProjectUnit, metric string) []SBCLinha {
+	linhas := make([]SBCLinha, 0, len(units))
+	for _, unit := range units {
+		serie := make([]SBCSerie, 0, len(unit.Consumptions))
+		for tech, cons := range unit.Consumptions {
+			if tech == "total" {
+				continue
+			}
+			var valor float64
+			switch metric {
+			case "energy":
+				if cons.EnergyMin != nil && cons.EnergyMax != nil {
+					valor = (*cons.EnergyMin + *cons.EnergyMax) / 2
+				} else if cons.EnergyMax != nil {
+					valor = *cons.EnergyMax
+				}
+			case "co2":
+				if cons.CO2Min != nil && cons.CO2Max != nil {
+					valor = (*cons.CO2Min + *cons.CO2Max) / 2
+				} else if cons.CO2Max != nil {
+					valor = *cons.CO2Max
+				}
+			}
+			if valor <= 0 {
+				continue
+			}
+			nome := moduleTypeDisplayNames[tech]
+			if nome == "" {
+				nome = tech
+			}
+			serie = append(serie, SBCSerie{Nome: nome, Valor: math.Round(valor*100) / 100})
+		}
+		if len(serie) == 0 {
+			continue
+		}
+		sort.Slice(serie, func(i, j int) bool {
+			return serie[i].Valor > serie[j].Valor
+		})
+		linhas = append(linhas, SBCLinha{Nome: unit.Name, Series: serie})
+	}
+	return linhas
+}
+
+// buildUnits builds the "Composição e impacto de cada tecnologia por material"
+// chart data: one entry per tower unit, each with one Tecnology per module type
+// and one Material per material class. Values are average CO₂ ((min+max)/2)
+// normalized per m² of the unit's floor area, matching the Kg CO₂/m² unit shown
+// in the report; percentages reflect the share within each level.
+func buildUnits(units []data.ProjectUnit, emissionsFor func(uuid.UUID) ([]data.ProjectMaterialEmissions, error)) ([]Unit, error) {
+	result := make([]Unit, 0, len(units))
+	for _, unit := range units {
+		emissions, err := emissionsFor(unit.ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(emissions) == 0 {
+			continue
+		}
+
+		type techAgg struct {
+			name    string
+			byMat   map[string]float64
+			total   float64
+		}
+		techs := make(map[string]*techAgg)
+		for _, e := range emissions {
+			if e.CO2Min <= 0 && e.CO2Max <= 0 {
+				continue
+			}
+			techName := moduleTypeDisplayNames[e.Technology]
+			if techName == "" {
+				techName = e.Technology
+			}
+			matName := materialDisplayNames[e.Material]
+			if matName == "" {
+				matName = e.Material
+			}
+			co2Avg := (e.CO2Min + e.CO2Max) / 2
+
+			agg, ok := techs[techName]
+			if !ok {
+				agg = &techAgg{name: techName, byMat: make(map[string]float64)}
+				techs[techName] = agg
+			}
+			agg.byMat[matName] += co2Avg
+			agg.total += co2Avg
+		}
+
+		area := unit.Area
+		if area <= 0 {
+			area = 1
+		}
+		var unitTotal float64
+		for _, agg := range techs {
+			unitTotal += agg.total
+		}
+
+		tecnologies := make([]Tecnology, 0, len(techs))
+		for _, agg := range techs {
+			materials := make([]Material, 0, len(agg.byMat))
+			for mat, kg := range agg.byMat {
+				if kg <= 0 {
+					continue
+				}
+				materials = append(materials, Material{
+					Name:    mat,
+					Value:   kg / area,
+					Percent: kg / agg.total * 100,
+				})
+			}
+			sort.Slice(materials, func(i, j int) bool {
+				return materials[i].Value > materials[j].Value
+			})
+			percent := 0.0
+			if unitTotal > 0 {
+				percent = agg.total / unitTotal * 100
+			}
+			tecnologies = append(tecnologies, Tecnology{Name: agg.name, Percent: percent, Materials: materials})
+		}
+		sort.Slice(tecnologies, func(i, j int) bool {
+			return tecnologies[i].Percent > tecnologies[j].Percent
+		})
+
+		result = append(result, Unit{Name: unit.Name, Tecnologies: tecnologies})
+	}
+	return result, nil
+}
+
 func unknownUnitLabel(unit string) string {
 	switch unit {
 	case "m2":
@@ -805,53 +938,22 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		UnitsDetails:      []unitDetail{},
 	}
 
+	unitsData, err := buildUnits(project.Units, app.models.Modules.GetUnitMaterialEmissionsByTechnology)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	var jsonData = JSONData{
 		Sources: sources,
 		GM:      gm,
 		GC:      gcPoints,
-		SBC1: []SBCLinha{
-			{Nome: "Torre A", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Torre B", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Residencial modelo", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 32}, {Nome: "Fundação radier", Valor: 10}, {Nome: "Cobertura", Valor: 6}, {Nome: "teste", Valor: 15}}},
-		},
-		SBC2: []SBCLinha{
-			{Nome: "Torre A", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-			{Nome: "Torre B", Series: []SBCSerie{
-				{Nome: "Parede de concreto", Valor: 16}, {Nome: "Fundação radier", Valor: 5}, {Nome: "Cobertura", Valor: 3}}},
-		},
+		SBC1:    buildSBCLinhas(project.Units, "energy"),
+		SBC2:    buildSBCLinhas(project.Units, "co2"),
 		CO2Chart:    co2Points,
 		EnergyChart: energyPoints,
 		SelectedIDs: []string{projectID.String()},
-		Units: []Unit{
-			{Name: "Torre A", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
-					{Name: "Concreto", Value: 2100, Percent: 60},
-					{Name: "Aço", Value: 400, Percent: 20},
-					{Name: "Argamassa", Value: 1100, Percent: 20},
-				}},
-				{Name: "Fundação radier", Percent: 30, Materials: []Material{
-					{Name: "Concreto", Value: 4560, Percent: 70},
-					{Name: "Aço", Value: 350, Percent: 15},
-					{Name: "Argamassa", Value: 70, Percent: 15},
-				}},
-			}},
-			{Name: "Torre B", Tecnologies: []Tecnology{
-				{Name: "Parede de concreto", Percent: 40, Materials: []Material{
-					{Name: "Concreto", Value: 2100, Percent: 60},
-					{Name: "Aço", Value: 400, Percent: 20},
-					{Name: "Argamassa", Value: 1100, Percent: 20},
-				}},
-				{Name: "Fundação radier", Percent: 30, Materials: []Material{
-					{Name: "Concreto", Value: 4560, Percent: 70},
-					{Name: "Aço", Value: 350, Percent: 15},
-					{Name: "Argamassa", Value: 70, Percent: 15},
-				}},
-			}},
-		},
+		Units:       unitsData,
 	}
 
 	reportContent, err := generateDocumentContent("caixa.gohtml", "report", reportData, jsonData, fontFaceCSS(assets.RobotoFlex, "Roboto Flex"))

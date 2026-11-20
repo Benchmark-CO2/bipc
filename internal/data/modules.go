@@ -927,6 +927,84 @@ func (m ModuleModel) GetProjectMaterialEmissionsByTechnology(projectID uuid.UUID
 	return emissions, nil
 }
 
+// GetUnitMaterialEmissionsByTechnology aggregates the per-module material
+// breakdown (material_consumption jsonb) for a single unit, mirroring the scope
+// used for project consumptions: only active options, floors plus direct unit
+// modules. No repetition weighting is applied (per-unit values).
+func (m ModuleModel) GetUnitMaterialEmissionsByTechnology(unitID uuid.UUID) ([]ProjectMaterialEmissions, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	query := `
+		WITH unit_materials AS (
+			SELECT
+				m.type AS technology,
+				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
+				SUM((j.value->>'co2_min')::float8) AS co2_min,
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
+			FROM module m
+			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
+			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
+			INNER JOIN floor f ON mtc.target_id = f.id AND mtc.target_type = 'floor'
+			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
+			WHERE f.unit_id = $1 AND opt.active = TRUE
+			GROUP BY m.type, j.value->>'material', j.value->>'resistance'
+
+			UNION ALL
+
+			SELECT
+				m.type AS technology,
+				j.value->>'material' AS material,
+				COALESCE(j.value->>'resistance', '') AS resistance,
+				SUM((j.value->>'co2_min')::float8) AS co2_min,
+				SUM((j.value->>'co2_max')::float8) AS co2_max,
+				SUM((j.value->>'energy_min')::float8) AS energy_min,
+				SUM((j.value->>'energy_max')::float8) AS energy_max,
+				SUM(COALESCE((j.value->>'quantity')::float8, 0)) AS quantity
+			FROM module m
+			CROSS JOIN LATERAL jsonb_array_elements(m.material_consumption) AS j(value)
+			INNER JOIN module_target_consumption mtc ON mtc.module_id = m.id
+			INNER JOIN options opt ON mtc.option_id = opt.id AND mtc.role_id = opt.role_id
+			INNER JOIN units u ON mtc.target_id = u.id
+			WHERE mtc.target_type = 'unit' AND mtc.target_id = $1 AND opt.active = TRUE
+			GROUP BY m.type, j.value->>'material', j.value->>'resistance'
+		)
+		SELECT um.technology, um.material, um.resistance,
+		       SUM(um.co2_min) AS co2_min,
+		       SUM(um.co2_max) AS co2_max,
+		       SUM(um.energy_min) AS energy_min,
+		       SUM(um.energy_max) AS energy_max,
+		       SUM(um.quantity) AS quantity
+		FROM unit_materials um
+		GROUP BY um.technology, um.material, um.resistance
+		ORDER BY um.technology, um.material, um.resistance`
+
+	rows, err := m.DB.QueryContext(ctx, query, unitID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var emissions []ProjectMaterialEmissions
+	for rows.Next() {
+		var e ProjectMaterialEmissions
+		if err := rows.Scan(&e.Technology, &e.Material, &e.Resistance, &e.CO2Min, &e.CO2Max, &e.EnergyMin, &e.EnergyMax, &e.Quantity); err != nil {
+			return nil, err
+		}
+		emissions = append(emissions, e)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return emissions, nil
+}
+
 func (m ModuleModel) validateModuleTargets(tx *sql.Tx, ctx context.Context, module *Module) error {
 	var optionUnitID uuid.UUID
 

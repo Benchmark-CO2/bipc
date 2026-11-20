@@ -1353,7 +1353,7 @@
 			const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
 			const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
 			const bandaW = 16, gap = 4, plotW = iw - bandaW - gap, bx = iw - bandaW;
-			const x = d3.scaleLinear().domain([0, 0.6]).range([0, plotW]);
+			const x = d3.scaleLinear().domain([0, 1]).range([0, plotW]);
 			const y = d3.scaleLinear().domain([0, 1]).range([ih, 0]);
 			
 			const svg = d3.select(seletor).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img")
@@ -1475,6 +1475,7 @@
 				.attr("height", y.bandwidth());
 			
 			// Valores dentro das barras (não desenha onde o valor é 0)
+			const sbcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3] }).format(".2f");
 			groups.selectAll("text")
 				.data(d => d.filter(v => v[1] - v[0] > 0))
 				.join("text")
@@ -1482,7 +1483,7 @@
 				.attr("x", d => x(d[0]) + 4)
 				.attr("y", d => y(d.data.nome) + y.bandwidth() / 2)
 				.attr("dominant-baseline", "middle")
-				.text(d => `${d[1] - d[0]}%`)
+				.text(d => sbcFmt(d[1] - d[0]))
 				.each(function (d) {
 					const larguraBarra = x(d[1]) - x(d[0]) - gap;
 					const larguraTexto = this.getComputedTextLength();
