@@ -1422,7 +1422,7 @@ func (m ModuleModel) SourceDistribution(projectID uuid.UUID) (map[string]float64
 		FROM module m
 		INNER JOIN options o ON o.id = m.option_id
 		INNER JOIN units u ON u.id = o.unit_id
-		WHERE u.project_id = $1`
+		WHERE u.project_id = $1 AND o.active = TRUE`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

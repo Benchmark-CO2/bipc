@@ -323,7 +323,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			INNER JOIN projects p ON u.project_id = p.id
 			INNER JOIN module_target_consumption mtc ON f.id = mtc.target_id
 			INNER JOIN module m ON mtc.module_id = m.id
-			WHERE mtc.target_type = 'floor' AND p.benchmark = true`
+			INNER JOIN options opt ON opt.id = mtc.option_id
+			WHERE mtc.target_type = 'floor' AND p.benchmark = true AND opt.active = TRUE`
 
 	if filters.Technology != nil {
 		technologies := strings.Split(*filters.Technology, ",")
@@ -374,7 +375,8 @@ func (m BenchmarkModel) GetProjectsBenchmark(filters GetProjectsBenchmarkFilters
 			INNER JOIN projects p ON u.project_id = p.id
 			INNER JOIN module_target_consumption mtc ON f.id = mtc.target_id AND mtc.target_type = 'floor'
 			INNER JOIN module m ON mtc.module_id = m.id
-			WHERE p.benchmark = true
+			INNER JOIN options opt ON opt.id = mtc.option_id
+			WHERE p.benchmark = true AND opt.active = TRUE
 			GROUP BY f.unit_id
 		)
 		SELECT
