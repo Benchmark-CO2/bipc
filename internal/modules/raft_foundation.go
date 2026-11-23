@@ -107,7 +107,6 @@ func (r *RaftFoundation) Calculate() (Consumption, error) {
 	r.normalizeToNewFormat()
 
 	result := CalculateConcreteConsumption(r.Concrete)
-	result.Material += concreteVolumeFromItems(r.Concrete)
 
 	steelConsumption, err := CalculateSteelConsumption(r.Steel)
 	if err != nil {

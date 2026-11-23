@@ -134,8 +134,6 @@ func (w *ConcreteWall) Calculate() (Consumption, error) {
 	total.sum(steelConsumption)
 	total.addMaterials(steelConsumption)
 
-	total.Material += concreteVolumeFromItems(w.Concrete)
-
 	return total, nil
 }
 

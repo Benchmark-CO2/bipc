@@ -93,6 +93,7 @@ type TableRow struct {
 	EnergyProv float64
 	EnergyMax  float64
 	Cum        float64
+	HasCum     bool // material com quantidade em m³ (concreto/graute/argamassa)
 }
 
 // UserModuleMaterial is a material row of an unknown module in the report: the
@@ -633,6 +634,19 @@ func buildGMCategorias(emissions []data.ProjectMaterialEmissions) []GMCategoria 
 // (module type). Each group opens with a header row holding its totals, then
 // one row per material class and resistance category. Values are normalized per
 // m² of total tower area; the "prov" (most likely) column uses the mean of the
+// cumMaterials maps the material classes whose quantity is already measured in
+// m³ (concrete, grout, mortar). Steel (kg) and blocks (units) have no m³
+// equivalent yet, so their CUM cells are left blank.
+var cumMaterials = map[string]bool{
+	"concrete": true,
+	"grout":    true,
+	"mortar":   true,
+}
+
+func hasCumMaterial(material string) bool {
+	return cumMaterials[material]
+}
+
 // min/max bounds; CUM is the material quantity per m².
 func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea float64) []TableRow {
 	type materialRow struct {
@@ -657,6 +671,7 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 			EnergyMin:  e.EnergyMin,
 			EnergyMax:  e.EnergyMax,
 			Cum:        e.Quantity,
+			HasCum:     e.Technology != "structural_masonry" && hasCumMaterial(e.Material),
 		}
 		row.Co2Prov = (row.Co2Min + row.Co2Max) / 2
 		row.EnergyProv = (row.EnergyMin + row.EnergyMax) / 2
@@ -670,7 +685,10 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 		target.EnergyMin += row.EnergyMin
 		target.EnergyMax += row.EnergyMax
 		target.EnergyProv = (target.EnergyMin + target.EnergyMax) / 2
-		target.Cum += row.Cum
+		if row.HasCum {
+			target.Cum += row.Cum
+			target.HasCum = true
+		}
 	}
 
 	addMaterial := func(target *techAgg, e data.ProjectMaterialEmissions) {
@@ -692,11 +710,7 @@ func buildTableCarbonEnergy(emissions []data.ProjectMaterialEmissions, totalArea
 		}
 		addMaterial(agg, e)
 
-		geral.Co2Min += e.CO2Min
-		geral.Co2Max += e.CO2Max
-		geral.EnergyMin += e.EnergyMin
-		geral.EnergyMax += e.EnergyMax
-		geral.Cum += e.Quantity
+		addRow(&geral, makeMaterialRow(e))
 
 		matKey := e.Material + "\x00" + e.Resistance
 		mr, ok := geralByKey[matKey]
@@ -860,18 +874,22 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 	if totalConsumption, ok := project.Consumptions["total"]; ok && totalConsumption != nil && totalConsumption.Material != nil {
 		projectCUM = *totalConsumption.Material
 	}
-	benchmarkSeries.Material = addSelectedBenchmarkPoint(
-		benchmarkSeries.Material,
-		projectID,
-		projectCUM,
-	)
+	if projectCUM > 0 {
+		benchmarkSeries.Material = addSelectedBenchmarkPoint(
+			benchmarkSeries.Material,
+			projectID,
+			projectCUM,
+		)
+	}
 	calculateGiniRank(benchmarkSeries.Material)
 	gcPoints := buildGCPoints(benchmarkSeries.Material, projectID)
 
 	projectCUMY := 0.0
+	hasProjectCUM := false
 	for _, point := range benchmarkSeries.Material {
 		if point.ID == projectID {
 			projectCUMY = point.Y
+			hasProjectCUM = true
 			break
 		}
 	}
@@ -895,7 +913,7 @@ func (app *application) screenshotHandler(w http.ResponseWriter, r *http.Request
 		EnergyClass:             energyClass,
 		EnergyTotal:             energyTotal,
 
-		CumClass: classificationLetter(projectCUMY),
+		CumClass: cumClassification(projectCUMY, hasProjectCUM),
 		CumTotal: len(benchmarkSeries.Material),
 
 		UserModulesTable: buildUserModulesTable(project.UnknownModules),
@@ -1059,6 +1077,15 @@ func classificationLetter(y float64) string {
 		return "C"
 	}
 	return "D"
+}
+
+// cumClassification returns the CUM class letter, or an empty string when the
+// project has no CUM point (e.g. a structural-masonry-only project).
+func cumClassification(y float64, hasProject bool) string {
+	if !hasProject {
+		return ""
+	}
+	return classificationLetter(y)
 }
 
 var marker = []byte("\n%%SYS-SIG:")

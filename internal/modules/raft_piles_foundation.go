@@ -147,7 +147,6 @@ func (rp *RaftPilesFoundation) Calculate() (Consumption, error) {
 	rp.normalizeToNewFormat()
 
 	result := CalculateConcreteConsumption(rp.Concrete)
-	result.Material += concreteVolumeFromItems(rp.Concrete)
 
 	steelConsumption, err := CalculateSteelConsumption(rp.Steel)
 	if err != nil {

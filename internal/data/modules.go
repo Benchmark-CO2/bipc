@@ -683,30 +683,10 @@ func (m ModuleModel) UpdateComputedConsumption(moduleID uuid.UUID, co2Min, co2Ma
 	return err
 }
 
-// UpdateMaterialConsumption refreshes only the material breakdown jsonb of a
-// module row. Used to backfill the breakdown for modules whose totals are
-// already stored.
-func (m ModuleModel) UpdateMaterialConsumption(moduleID uuid.UUID, materials []MaterialConsumption) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	materialJSON, err := json.Marshal(materials)
-	if err != nil {
-		return err
-	}
-
-	query := `
-		UPDATE module
-		SET material_consumption = $2,
-			updated_at = NOW()
-		WHERE id = $1`
-
-	_, err = m.DB.ExecContext(ctx, query, moduleID, materialJSON)
-	return err
-}
-
 // ListModuleIDsMissingMaterialConsumption returns modules whose material
-// breakdown jsonb has not been computed yet.
+// breakdown jsonb has not been computed yet. Modules whose targets have zero
+// area are excluded, mirroring ListModuleIDsMissingConsumption, since the full
+// sync path divides the consumption by the target area.
 func (m ModuleModel) ListModuleIDsMissingMaterialConsumption() ([]uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -715,6 +695,25 @@ func (m ModuleModel) ListModuleIDsMissingMaterialConsumption() ([]uuid.UUID, err
 		SELECT m.id
 		FROM module m
 		WHERE m.material_consumption IS NULL
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM module_target_consumption mtc_floor
+			LEFT JOIN floor f ON f.id = mtc_floor.target_id
+			WHERE mtc_floor.module_id = m.id
+			  AND mtc_floor.target_type = 'floor'
+			  AND (f.id IS NULL OR COALESCE(f.area, 0) = 0)
+		  )
+		  AND NOT EXISTS (
+			SELECT 1
+			FROM module_target_consumption mtc_unit
+			WHERE mtc_unit.module_id = m.id
+			  AND mtc_unit.target_type = 'unit'
+			  AND COALESCE((
+				SELECT SUM(f.area)
+				FROM floor f
+				WHERE f.unit_id = mtc_unit.target_id
+			), 0) = 0
+		  )
 		ORDER BY m.id`
 
 	rows, err := m.DB.QueryContext(ctx, query)

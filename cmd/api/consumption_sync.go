@@ -6,14 +6,10 @@ import (
 )
 
 func (app *application) syncMissingModuleConsumptions(moduleIDs []uuid.UUID) error {
-	for _, moduleID := range moduleIDs {
+	for i, moduleID := range moduleIDs {
 		dataModule, err := app.models.Modules.Get(moduleID)
 		if err != nil {
 			return err
-		}
-
-		if dataModule.Type == "structural_masonry" {
-			continue
 		}
 
 		moduleAPI, err := modules.ParseModuleType(dataModule.Type)
@@ -70,6 +66,13 @@ func (app *application) syncMissingModuleConsumptions(moduleIDs []uuid.UUID) err
 		if err != nil {
 			return err
 		}
+
+		app.logger.Info("module consumption synced",
+			"module_id", dataModule.ID.String(),
+			"type", dataModule.Type,
+			"index", i+1,
+			"total", len(moduleIDs),
+		)
 	}
 
 	return nil
@@ -81,43 +84,28 @@ func (app *application) backfillMissingModuleConsumptions() error {
 		return err
 	}
 
-	return app.syncMissingModuleConsumptions(moduleIDs)
+	if err := app.syncMissingModuleConsumptions(moduleIDs); err != nil {
+		return err
+	}
+
+	app.logger.Info("material backfill completed", "modules", len(moduleIDs))
+	return nil
 }
 
 // backfillMissingMaterialConsumptions computes the per-material breakdown for
-// modules whose jsonb column is still NULL. Unlike the mtc sync it also covers
-// structural_masonry, since only the material breakdown jsonb is written here.
+// modules whose jsonb column is still NULL. It runs the full sync path so the
+// module totals and target consumption rows are refreshed from the same
+// calculation, keeping the summary and the material breakdown consistent.
 func (app *application) backfillMissingMaterialConsumptions() error {
 	moduleIDs, err := app.models.Modules.ListModuleIDsMissingMaterialConsumption()
 	if err != nil {
 		return err
 	}
 
-	for _, moduleID := range moduleIDs {
-		dataModule, err := app.models.Modules.Get(moduleID)
-		if err != nil {
-			return err
-		}
-
-		moduleAPI, err := modules.ParseModuleType(dataModule.Type)
-		if err != nil {
-			return err
-		}
-
-		module, err := moduleAPI.Get(app.models, moduleID)
-		if err != nil {
-			return err
-		}
-
-		result, err := module.Calculate()
-		if err != nil {
-			return err
-		}
-
-		if err := app.models.Modules.UpdateMaterialConsumption(moduleID, result.Materials); err != nil {
-			return err
-		}
+	if err := app.syncMissingModuleConsumptions(moduleIDs); err != nil {
+		return err
 	}
 
+	app.logger.Info("material consumption backfill completed", "modules", len(moduleIDs))
 	return nil
 }
