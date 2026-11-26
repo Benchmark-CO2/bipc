@@ -165,7 +165,6 @@ func (p *PilesFoundation) Calculate() (Consumption, error) {
 	p.normalizeToNewFormat()
 
 	result := CalculateConcreteConsumption(p.Concrete)
-	result.Material += concreteVolumeFromItems(p.Concrete)
 
 	steelConsumption, err := CalculateSteelConsumption(p.Steel)
 	if err != nil {

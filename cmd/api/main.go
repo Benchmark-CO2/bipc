@@ -129,14 +129,12 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	logger.Info("material backfill completed")
 
 	err = app.backfillMissingMaterialConsumptions()
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	logger.Info("material consumption backfill completed")
 
 	mailer, err := mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender, cfg.env)
 	if err != nil {

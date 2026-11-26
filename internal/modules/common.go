@@ -183,15 +183,6 @@ func concreteVolumeFromElement(ce ConcreteElement) float64 {
 	return total
 }
 
-func concreteVolumeFromItems(items []ConcreteVolumeItem) float64 {
-	total := 0.0
-	for _, item := range items {
-		total += item.Volume
-	}
-
-	return total
-}
-
 func findClosestResistance(targetValue float64, material SidacMaterial) float64 {
 	var firstAbove float64 = -1
 	var highest float64
@@ -404,6 +395,8 @@ func CalculateConcreteConsumption(items []ConcreteVolumeItem) Consumption {
 
 	for _, item := range items {
 		fck := float64(item.Fck)
+
+		result.Material += item.Volume
 
 		co2Val, ok := sidacConcreteData.KgCO2[fck]
 		if !ok {

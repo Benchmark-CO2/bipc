@@ -147,8 +147,6 @@ func (b *BeamColumn) Calculate() (Consumption, error) {
 	total.sum(steelConsumption)
 	total.addMaterials(steelConsumption)
 
-	total.Material += concreteVolumeFromItems(b.Concrete)
-
 	return total, nil
 }
 

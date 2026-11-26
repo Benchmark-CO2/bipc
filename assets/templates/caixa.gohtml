@@ -779,13 +779,13 @@
 		<div style="display: flex; width: 325px; flex-direction: column; gap: 7.5px; flex: 1">
 			<div style="display: flex; justify-content: space-between;">
 				<h2 style="align-self: start; margin-bottom: 0px;">Impacto de CUM por tecnologia (m³/m²)</h2>
-				<div class="{{.ReportData.CumClass}}" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px; transform: translateY(5px);">
+				{{if .ReportData.CumClass}}<div class="{{.ReportData.CumClass}}" style=" display: flex; padding: 2.5px 4px; align-items: center; gap: 4px; transform: translateY(5px);">
 					<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.8px;">{{.ReportData.CumClass}}</span>
 					<div style="display: flex; flex-direction: column; align-items: center;">
 						<span style="color: #121F21; font-feature-settings: 'calt' off; font-size: 8px; font-style: normal; font-weight: 700; line-height: normal; letter-spacing: -0.7px;">Classificação</span>
 						<span style="color: #71717A; font-feature-settings: 'calt' off; font-size: 6px; font-style: normal; font-weight: 400; line-height: normal; letter-spacing: -0.55px;">N: {{.ReportData.CumTotal}} projetos</span>
 					</div>
-				</div>		
+				</div>{{end}}		
 			</div>
 			
 			<div id="GC" class="gc-chart"></div>
@@ -820,7 +820,7 @@
 					<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyMin}}</td>
 					<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyProv}}</td>
 					<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyMax}}</td>
-					<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .Cum}}</td>
+					<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{if .HasCum}}{{printf "%.2f" .Cum}}{{else}}—{{end}}</td>
 				</tr>
 			{{else}}
     			<tr><td style="padding: 5px 0; color: #121F21; font-size: 10px; font-weight: 400; text-align: center;" colspan="8">Nenhum dado encontrado</td></tr>
@@ -902,7 +902,7 @@
 						<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyMin}}</td>
 						<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyProv}}</td>
 						<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .EnergyMax}}</td>
-						<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{printf "%.2f" .Cum}}</td>
+						<td class="{{.Type}}" style="padding: 5px 0; color: #121F21; font-size: 7px; font-weight: 400;">{{if .HasCum}}{{printf "%.2f" .Cum}}{{else}}—{{end}}</td>
 					</tr>
 				{{else}}
 					<tr><td style="padding: 5px 0; color: #121F21; font-size: 10px; font-weight: 400; text-align: center;" colspan="8">Nenhum dado encontrado</td></tr>
@@ -1349,6 +1349,7 @@
 				{ nome: "D", de: 0.75, ate: 1,    cor: "var(--gc-d)" }
 			];
 			const gcFmt = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["R$", ""] }).format(".1f");
+			const gcFmtX = d3.formatLocale({ decimal: ",", thousands: ".", grouping: [3], currency: ["R$", ""] }).format(".2f");
 			
 			const W = 360, H = 210, m = { top: 5, right: 0, bottom: 15, left: 25 };
 			const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
@@ -1366,7 +1367,7 @@
 				.call(s => s.select(".domain").remove()).call(s => s.selectAll("line").attr("stroke", "var(--gc-grid)"));
 			
 			g.append("g").attr("class", "gc-tick").attr("transform", `translate(0,${ih})`)
-				.call(d3.axisBottom(x).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
+				.call(d3.axisBottom(x).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmtX))
 				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));
 			g.append("g").attr("class", "gc-tick").call(d3.axisLeft(y).ticks(10).tickSize(0).tickPadding(8).tickFormat(gcFmt))
 				.call(s => s.select(".domain").attr("stroke", "var(--gc-axis)"));

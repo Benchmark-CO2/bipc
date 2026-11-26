@@ -224,14 +224,14 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			groutCO2Min += val.Min * gv.Volume
 			groutCO2Max += val.Max * gv.Volume
 
-			val, ok = sidacGrout.MJ[float64(gv.Fgk)]
+			energyVal, ok := sidacGrout.MJ[float64(gv.Fgk)]
 			if !ok {
-				val = sidacGrout.MJ[30]
+				energyVal = sidacGrout.MJ[30]
 			}
-			result.EnergyMin += val.Min * gv.Volume
-			result.EnergyMax += val.Max * gv.Volume
-			groutEnergyMin += val.Min * gv.Volume
-			groutEnergyMax += val.Max * gv.Volume
+			result.EnergyMin += energyVal.Min * gv.Volume
+			result.EnergyMax += energyVal.Max * gv.Volume
+			groutEnergyMin += energyVal.Min * gv.Volume
+			groutEnergyMax += energyVal.Max * gv.Volume
 
 			key := groutResistanceKey(gv.Fgk)
 			agg, ok := groutByKey[key]
@@ -241,8 +241,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			}
 			agg.CO2Min += val.Min * gv.Volume
 			agg.CO2Max += val.Max * gv.Volume
-			agg.EnergyMin += val.Min * gv.Volume
-			agg.EnergyMax += val.Max * gv.Volume
+			agg.EnergyMin += energyVal.Min * gv.Volume
+			agg.EnergyMax += energyVal.Max * gv.Volume
 			agg.Volume += gv.Volume
 		}
 		steelConsumption, err := CalculateSteelConsumption(g.Steel)
@@ -250,6 +250,7 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 			return err
 		}
 		groutSteel.sum(steelConsumption)
+		groutSteel.addMaterials(steelConsumption)
 		result.sum(steelConsumption)
 	}
 
@@ -283,14 +284,14 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		mortarCO2Min += val.Min * m.Volume
 		mortarCO2Max += val.Max * m.Volume
 
-		val, ok = sidacMortar.MJ[float64(m.Fak)]
+		energyVal, ok := sidacMortar.MJ[float64(m.Fak)]
 		if !ok {
-			val = sidacMortar.MJ[14]
+			energyVal = sidacMortar.MJ[14]
 		}
-		result.EnergyMin += val.Min * m.Volume
-		result.EnergyMax += val.Max * m.Volume
-		mortarEnergyMin += val.Min * m.Volume
-		mortarEnergyMax += val.Max * m.Volume
+		result.EnergyMin += energyVal.Min * m.Volume
+		result.EnergyMax += energyVal.Max * m.Volume
+		mortarEnergyMin += energyVal.Min * m.Volume
+		mortarEnergyMax += energyVal.Max * m.Volume
 
 		key := mortarResistanceKey(m.Fak)
 		agg, ok := mortarByKey[key]
@@ -300,8 +301,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		agg.CO2Min += val.Min * m.Volume
 		agg.CO2Max += val.Max * m.Volume
-		agg.EnergyMin += val.Min * m.Volume
-		agg.EnergyMax += val.Max * m.Volume
+		agg.EnergyMin += energyVal.Min * m.Volume
+		agg.EnergyMax += energyVal.Max * m.Volume
 		agg.Volume += m.Volume
 	}
 
@@ -346,14 +347,14 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		blocksCO2Min += val.Min * float64(b.Quantity) * massFactor
 		blocksCO2Max += val.Max * float64(b.Quantity) * massFactor
 
-		val, ok = sidacBlockData.MJ[float64(b.Fbk)]
+		energyVal, ok := sidacBlockData.MJ[float64(b.Fbk)]
 		if !ok {
-			val = sidacBlockData.MJ[26]
+			energyVal = sidacBlockData.MJ[26]
 		}
-		result.EnergyMin += val.Min * float64(b.Quantity) * massFactor
-		result.EnergyMax += val.Max * float64(b.Quantity) * massFactor
-		blocksEnergyMin += val.Min * float64(b.Quantity) * massFactor
-		blocksEnergyMax += val.Max * float64(b.Quantity) * massFactor
+		result.EnergyMin += energyVal.Min * float64(b.Quantity) * massFactor
+		result.EnergyMax += energyVal.Max * float64(b.Quantity) * massFactor
+		blocksEnergyMin += energyVal.Min * float64(b.Quantity) * massFactor
+		blocksEnergyMax += energyVal.Max * float64(b.Quantity) * massFactor
 
 		key := blocksResistanceKey(b.Fbk)
 		agg, ok := blocksByKey[key]
@@ -363,8 +364,8 @@ func addMansonryElement(total *Consumption, me MasonryElement, sidacGrout, sidac
 		}
 		agg.CO2Min += val.Min * float64(b.Quantity) * massFactor
 		agg.CO2Max += val.Max * float64(b.Quantity) * massFactor
-		agg.EnergyMin += val.Min * float64(b.Quantity) * massFactor
-		agg.EnergyMax += val.Max * float64(b.Quantity) * massFactor
+		agg.EnergyMin += energyVal.Min * float64(b.Quantity) * massFactor
+		agg.EnergyMax += energyVal.Max * float64(b.Quantity) * massFactor
 		agg.Count += float64(b.Quantity) * massFactor
 	}
 
@@ -402,6 +403,11 @@ func (s *StructuralMasonry) Calculate() (Consumption, error) {
 	if err := addMansonryElement(&total, s.Masonry, sidacGroutData, sidacSteelData, sidacMortarData); err != nil {
 		return Consumption{}, err
 	}
+
+	// Structural masonry does not generate CUM data: the per-m² material is
+	// not comparable with the other technologies, so masonry-only projects are
+	// kept out of the CUM benchmark and the CUM graph.
+	total.Material = 0
 
 	return total, nil
 }
